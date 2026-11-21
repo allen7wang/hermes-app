@@ -33,54 +33,58 @@ struct ProjectWorkspaceView: View {
         NavigationStack(path: $path) {
             List {
                 Section {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Label("HERMES / PROJECTS", systemImage: "square.stack.3d.up")
-                            .font(.caption.weight(.semibold)).tracking(2).foregroundStyle(HermesTheme.accent)
-                        Text("为长期的事，留一个工作区。")
-                            .font(.title2.bold())
-                        Text("把相关对话、共同指令和参考资料放在一起。项目仅保存在本机，属于当前连接。")
-                            .font(.subheadline).foregroundStyle(HermesTheme.muted)
-                        HStack(spacing: 12) {
-                            projectMetric("项目", count: model.projects.count)
-                            projectMetric("项目对话", count: assignedCount)
-                            projectMetric("未分配", count: model.conversations.count - assignedCount)
-                        }
-                        Button { editor = ProjectEditorTarget(project: nil, profileID: model.activeProfileID) } label: {
-                            HStack { Label("创建项目", systemImage: "folder.badge.plus"); Spacer(); Image(systemName: "arrow.up.right") }
-                                .font(.subheadline.weight(.semibold)).padding(14)
-                                .foregroundStyle(HermesTheme.background)
-                                .background(HermesTheme.accent, in: RoundedRectangle(cornerRadius: 12))
-                        }.buttonStyle(.plain).disabled(model.needsRecovery || model.isSending || model.projects.count >= 100)
-                            .accessibilityIdentifier("projects-create")
-                        if model.projects.count >= 100 {
-                            Text("当前连接已达到 100 个项目上限。可以编辑或解散已有项目。")
-                                .font(.caption).foregroundStyle(HermesTheme.muted)
-                        }
-                    }.padding(.vertical, 8)
-                }.listRowBackground(Color.clear).listRowSeparator(.hidden)
-
-                Section("\(visible.count) 个项目 · \(model.activeProfileName)") {
+                    HStack(spacing: 10) {
+                        projectMetric("项目", count: model.projects.count, icon: "folder.fill", tone: .accent)
+                        projectMetric("项目对话", count: assignedCount, icon: "bubble.left.and.bubble.right.fill", tone: .info)
+                        projectMetric("未分配", count: model.conversations.count - assignedCount, icon: "tray.fill", tone: .neutral)
+                    }
+                    .cardRow(top: 4, bottom: 8)
+                    if model.projects.count >= 100 {
+                        Label("当前连接已达到 100 个项目上限。可以编辑或解散已有项目。", systemImage: "exclamationmark.triangle")
+                            .font(.caption).foregroundStyle(HermesTheme.warning).cardRow()
+                    }
+                }
+                Section {
                     if visible.isEmpty {
-                        ContentUnavailableView(query.isEmpty ? "从一个项目开始" : "没有匹配的项目",
-                            systemImage: "folder", description: Text(query.isEmpty ? "例如产品发布、学习计划或日常工作。已有对话也可以移动到项目。" : "试试项目名称或简介中的其他关键词。"))
-                            .listRowBackground(Color.clear)
+                        VStack(spacing: 14) {
+                            ContentUnavailableView(query.isEmpty ? "为长期的事，留一个工作区" : "没有匹配的项目",
+                                systemImage: "folder", description: Text(query.isEmpty ? "把相关对话、共同指令和参考资料放在一起。例如产品发布、学习计划或日常工作。" : "试试项目名称或简介中的其他关键词。"))
+                            if query.isEmpty {
+                                Button { editor = ProjectEditorTarget(project: nil, profileID: model.activeProfileID) } label: {
+                                    Label("创建项目", systemImage: "folder.badge.plus")
+                                }
+                                .buttonStyle(HermesPrimaryButtonStyle(fullWidth: false))
+                                .disabled(model.needsRecovery || model.isSending)
+                                .accessibilityIdentifier("projects-create")
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .cardRow(top: 24)
                     }
                     ForEach(visible) { project in
-                        NavigationLink(value: ProjectRoute(projectID: project.id, profileID: model.activeProfileID)) {
+                        Button { path.append(ProjectRoute(projectID: project.id, profileID: model.activeProfileID)) } label: {
                             ProjectCard(project: project,
                                 activeCount: conversationCounts[project.id]?.active ?? 0,
                                 archivedCount: conversationCounts[project.id]?.archived ?? 0)
-                        }.listRowBackground(HermesTheme.surface).accessibilityIdentifier("project-row-\(project.id)")
+                        }
+                        .buttonStyle(.plain)
+                        .hermesCard(padding: 14).cardRow()
+                        .accessibilityIdentifier("project-row-\(project.id)")
+                    }
+                } header: {
+                    if !visible.isEmpty {
+                        Text("\(visible.count) 个项目 · 仅保存在本机，属于「\(model.activeProfileName)」")
+                            .font(.caption).foregroundStyle(HermesTheme.muted).textCase(nil)
                     }
                 }
             }
-            .listStyle(.insetGrouped).scrollContentBackground(.hidden).background(HermesTheme.background)
-            .navigationTitle("项目工作区").navigationBarTitleDisplayMode(.inline)
+            .listStyle(.plain).hermesPage()
+            .navigationTitle(embedded ? "项目" : "项目工作区").navigationBarTitleDisplayMode(embedded ? .large : .inline)
             .searchable(text: $query, prompt: "搜索项目名称或简介")
             .toolbar {
                 if !embedded { ToolbarItem(placement: .cancellationAction) { Button("关闭") { dismiss() } } }
                 ToolbarItem(placement: .primaryAction) {
-                    Button { editor = ProjectEditorTarget(project: nil, profileID: model.activeProfileID) } label: { Image(systemName: "plus") }
+                    Button { editor = ProjectEditorTarget(project: nil, profileID: model.activeProfileID) } label: { Image(systemName: "folder.badge.plus") }
                         .accessibilityLabel("创建项目").disabled(model.needsRecovery || model.isSending || model.projects.count >= 100)
                 }
             }
@@ -94,16 +98,17 @@ struct ProjectWorkspaceView: View {
                 path.append(ProjectRoute(projectID: id, profileID: target.profileID))
             }
         }
-        .tint(HermesTheme.accent).preferredColorScheme(.dark)
+        .tint(HermesTheme.accent)
         .onChange(of: model.activeProfileID) { _, _ in query = ""; path = []; editor = nil }
     }
 
-    private func projectMetric(_ label: String, count: Int) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("\(count)").font(.title2.weight(.semibold))
+    private func projectMetric(_ label: String, count: Int, icon: String, tone: HermesTone) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Image(systemName: icon).font(.caption.weight(.bold)).foregroundStyle(tone.color)
+            Text("\(count)").font(.title2.weight(.bold).monospacedDigit()).foregroundStyle(HermesTheme.ink)
             Text(label).font(.caption).foregroundStyle(HermesTheme.muted)
-        }.frame(maxWidth: .infinity, alignment: .leading).padding(12)
-            .background(HermesTheme.surface, in: RoundedRectangle(cornerRadius: 12))
+        }
+        .hermesCard(padding: 12, radius: 14)
     }
     private func openChat() { if let onOpen { onOpen() } else { dismiss() } }
 }
@@ -113,16 +118,24 @@ private struct ProjectCard: View {
     let activeCount: Int
     let archivedCount: Int
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label(project.name, systemImage: "folder.fill").font(.headline).foregroundStyle(.white)
-            if !project.summary.isEmpty { Text(project.summary).font(.subheadline).foregroundStyle(HermesTheme.muted).lineLimit(2) }
-            HStack(spacing: 12) {
-                Text("\(activeCount) 段进行中")
-                Text("\(archivedCount) 段已归档")
-                Text("\(project.documents.count) 篇资料")
-                if !project.instructions.isEmpty { Image(systemName: "text.alignleft").accessibilityLabel("已设置项目指令") }
-            }.font(.caption).foregroundStyle(HermesTheme.accent)
-        }.padding(.vertical, 8)
+        HStack(alignment: .top, spacing: 12) {
+            IconTile(systemName: "folder.fill", tone: .accent, size: 40)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Text(project.name).font(.headline).foregroundStyle(HermesTheme.ink).lineLimit(1)
+                    if !project.instructions.isEmpty { StatusBadge(text: "指令", tone: .accent, icon: "text.alignleft") }
+                    Spacer(minLength: 0)
+                }
+                if !project.summary.isEmpty { Text(project.summary).font(.footnote).foregroundStyle(HermesTheme.muted).lineLimit(2) }
+                HStack(spacing: 12) {
+                    InlineLabel(text: "\(activeCount) 进行中", systemImage: "bubble.left")
+                    if archivedCount > 0 { InlineLabel(text: "\(archivedCount) 归档", systemImage: "archivebox") }
+                    InlineLabel(text: "\(project.documents.count) 篇资料", systemImage: "doc.text")
+                }
+                .font(.caption2).foregroundStyle(HermesTheme.muted)
+            }
+        }
+        .contentShape(Rectangle())
     }
 }
 
@@ -152,19 +165,21 @@ struct ProjectDetailView: View {
                 List {
                     Section {
                         VStack(alignment: .leading, spacing: 14) {
-                            Label(project.name, systemImage: "folder.fill").font(.title2.bold()).foregroundStyle(HermesTheme.accent)
-                            if !project.summary.isEmpty { Text(project.summary).font(.subheadline).textSelection(.enabled) }
-                            HStack(spacing: 14) {
+                            HStack(spacing: 12) {
+                                IconTile(systemName: "folder.fill", tone: .accent, size: 44)
+                                Text(project.name).font(.title2.bold()).foregroundStyle(HermesTheme.ink).lineLimit(2)
+                            }
+                            if !project.summary.isEmpty { Text(project.summary).font(.subheadline).foregroundStyle(HermesTheme.muted).textSelection(.enabled) }
+                            HStack(spacing: 10) {
                                 countLabel("进行中", count: active.count)
                                 countLabel("已归档", count: archived.count)
                                 countLabel("回收站", count: trashed.count)
                             }
                             Button { startConversation() } label: {
-                                HStack { Label("在项目中新建对话", systemImage: "square.and.pencil"); Spacer(); Image(systemName: "arrow.up.right") }
-                                    .font(.subheadline.weight(.semibold)).padding(14)
-                                    .foregroundStyle(HermesTheme.background)
-                                    .background(HermesTheme.accent, in: RoundedRectangle(cornerRadius: 12))
-                            }.buttonStyle(.plain).disabled(unavailable).accessibilityIdentifier("project-new-conversation")
+                                Label("在项目中新建对话", systemImage: "square.and.pencil")
+                            }
+                            .buttonStyle(HermesPrimaryButtonStyle())
+                            .disabled(unavailable).accessibilityIdentifier("project-new-conversation")
                             Text("创建后打开独立草稿，不会自动发送，也不会改动你当前对话的草稿。")
                                 .font(.caption).foregroundStyle(HermesTheme.muted)
                         }.padding(.vertical, 8)
@@ -173,14 +188,10 @@ struct ProjectDetailView: View {
                         NavigationLink {
                             ProjectKnowledgeView(projectID: projectID, profileID: profileID)
                         } label: {
-                            VStack(alignment: .leading, spacing: 9) {
-                                Label("项目资料库", systemImage: "books.vertical.fill")
-                                    .font(.headline).foregroundStyle(HermesTheme.accent)
-                                Text("\(project.documents.count) 篇资料 · \(project.documents.reduce(0) { $0 + $1.body.count }.formatted()) 个正文字符")
-                                    .font(.subheadline).foregroundStyle(.white)
-                                Text("新建或导入文本，再在对话里选择需要的参考资料。仅选中内容随请求发送。")
-                                    .font(.caption).foregroundStyle(HermesTheme.muted)
-                            }.padding(.vertical, 6)
+                            NavigationRowLabel(title: "项目资料库",
+                                               subtitle: "\(project.documents.count) 篇资料 · \(project.documents.reduce(0) { $0 + $1.body.count }.formatted()) 个正文字符 · 仅选中内容随请求发送",
+                                               icon: "books.vertical.fill", tone: .info)
+                                .padding(.vertical, 4)
                         }.accessibilityIdentifier("project-knowledge-library")
                     }.listRowBackground(HermesTheme.surface)
                     Section {
@@ -251,9 +262,10 @@ struct ProjectDetailView: View {
 
     private func countLabel(_ title: String, count: Int) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("\(count)").font(.title3.weight(.semibold))
+            Text("\(count)").font(.title3.weight(.bold).monospacedDigit()).foregroundStyle(HermesTheme.ink)
             Text(title).font(.caption).foregroundStyle(HermesTheme.muted)
-        }.frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .hermesCard(padding: 12, radius: 14)
     }
     @ViewBuilder private func conversationSection(_ title: String, records: [Conversation]) -> some View {
         Section(title) {
@@ -269,10 +281,10 @@ struct ProjectDetailView: View {
                             Spacer()
                             Image(systemName: "chevron.right").font(.caption2).foregroundStyle(HermesTheme.muted)
                         }
-                        Text(conversation.messages.last.map { $0.content.isEmpty ? "[图片]" : $0.content } ?? "独立草稿 · 尚未发送消息")
+                        Text(conversation.messages.last.map { $0.content.isEmpty ? "[图片]" : $0.content.markdownPreview } ?? "独立草稿 · 尚未发送消息")
                             .font(.caption).foregroundStyle(HermesTheme.muted).lineLimit(2)
                         Text("\(conversation.messages.count) 条消息").font(.caption2).foregroundStyle(HermesTheme.muted)
-                    }.foregroundStyle(.white).padding(.vertical, 5)
+                    }.foregroundStyle(HermesTheme.ink).padding(.vertical, 5)
                 }.disabled(model.isSending).accessibilityIdentifier("project-conversation-row-\(conversation.id)")
             }
         }.listRowBackground(HermesTheme.surface)
@@ -311,25 +323,25 @@ private struct ProjectEditorView: View {
             Form {
                 Section {
                     TextField("项目名称", text: $name).accessibilityIdentifier("project-name")
-                    Text("\(name.count) / 60").font(.caption).foregroundStyle(name.count > 60 ? .orange : HermesTheme.muted)
+                    Text("\(name.count) / 60").font(.caption).foregroundStyle(name.count > 60 ? HermesTheme.warning : HermesTheme.muted)
                 } header: { Text("名称") }.listRowBackground(HermesTheme.surface)
                 Section {
                     TextEditor(text: $summary).frame(minHeight: 100).scrollContentBackground(.hidden)
                         .accessibilityLabel("项目简介").accessibilityIdentifier("project-summary")
-                    Text("\(summary.count) / 2,000").font(.caption).foregroundStyle(summary.count > 2_000 ? .orange : HermesTheme.muted)
+                    Text("\(summary.count) / 2,000").font(.caption).foregroundStyle(summary.count > 2_000 ? HermesTheme.warning : HermesTheme.muted)
                 } header: { Text("项目简介") } footer: {
                     Text("用于说明项目目标和背景，不会自动随消息发送。")
                 }.listRowBackground(HermesTheme.surface)
                 Section {
                     TextEditor(text: $instructions).frame(minHeight: 180).scrollContentBackground(.hidden)
                         .accessibilityLabel("项目共同指令").accessibilityIdentifier("project-instructions")
-                    Text("\(instructions.count) / 8,000").font(.caption).foregroundStyle(instructions.count > 8_000 ? .orange : HermesTheme.muted)
+                    Text("\(instructions.count) / 8,000").font(.caption).foregroundStyle(instructions.count > 8_000 ? HermesTheme.warning : HermesTheme.muted)
                 } header: { Text("项目共同指令") } footer: {
                     Text("每次本机项目对话请求都会带入这些指令，再带入该对话自己的额外指令。修改后仅影响后续请求。项目不会自动共享各段对话的历史。")
                 }.listRowBackground(HermesTheme.surface)
                 if changedConnection {
                     Text("当前连接已改变，请关闭后重新打开项目。")
-                        .foregroundStyle(.orange).listRowBackground(HermesTheme.surface)
+                        .foregroundStyle(HermesTheme.warning).listRowBackground(HermesTheme.surface)
                 }
             }
             .scrollContentBackground(.hidden).background(HermesTheme.background)
@@ -356,7 +368,7 @@ private struct ProjectEditorView: View {
             .alert("项目保存失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("知道了", role: .cancel) { error = nil }
             } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 }
 
@@ -393,7 +405,7 @@ struct ProjectAssignmentView: View {
                 }
                 if changedConnection {
                     Text("当前连接已改变，请关闭后重新选择对话。")
-                        .foregroundStyle(.orange).listRowBackground(HermesTheme.surface)
+                        .foregroundStyle(HermesTheme.warning).listRowBackground(HermesTheme.surface)
                 }
             }
             .scrollContentBackground(.hidden).background(HermesTheme.background)
@@ -416,7 +428,7 @@ struct ProjectAssignmentView: View {
             .alert("移动失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("知道了", role: .cancel) { error = nil }
             } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
     private func option(_ title: String, icon: String, value: ProjectFilter) -> some View {
         Button { choice = value } label: {
@@ -424,7 +436,7 @@ struct ProjectAssignmentView: View {
                 Label(title, systemImage: icon)
                 Spacer()
                 if choice == value { Image(systemName: "checkmark").foregroundStyle(HermesTheme.accent) }
-            }.foregroundStyle(.white)
+            }.foregroundStyle(HermesTheme.ink)
         }.accessibilityIdentifier(identifier(value))
     }
     private func identifier(_ value: ProjectFilter) -> String {

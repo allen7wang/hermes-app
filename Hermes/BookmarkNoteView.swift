@@ -20,9 +20,9 @@ struct BookmarkNoteView: View {
                         .lineLimit(5...15).accessibilityLabel("收藏备注内容")
                 } footer: {
                     Text("\(note.count) / 2,000 字符 · 备注仅保存在本机，会随备份导出。")
-                        .foregroundStyle(note.count > MessageBookmark.noteLimit ? .red : HermesTheme.muted)
+                        .foregroundStyle(note.count > MessageBookmark.noteLimit ? HermesTheme.danger : HermesTheme.muted)
                 }
-                if let failure { Section { Text(failure).foregroundStyle(.red) } }
+                if let failure { Section { Text(failure).foregroundStyle(HermesTheme.danger) } }
             }
             .scrollContentBackground(.hidden).background(HermesTheme.background)
             .navigationTitle("收藏备注").navigationBarTitleDisplayMode(.inline)
@@ -37,6 +37,6 @@ struct BookmarkNoteView: View {
                 }
             }
         }
-        .tint(HermesTheme.accent).preferredColorScheme(.dark)
+        .tint(HermesTheme.accent)
     }
 }

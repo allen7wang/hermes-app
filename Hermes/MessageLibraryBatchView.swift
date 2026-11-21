@@ -33,7 +33,7 @@ struct MessageLibraryBatchExportView: View {
                     if preparing || currentText == nil && buildError == nil {
                         HStack { ProgressView().controlSize(.small); Text("正在准备完整汇编…").font(.caption) }
                     }
-                    if let buildError { Label(buildError, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(.orange) }
+                    if let buildError { Label(buildError, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(HermesTheme.warning) }
                 }.listRowBackground(HermesTheme.surface)
                 Section("检查所选消息") {
                     ForEach(MessageLibraryBatch.ordered(snapshot.items)) { item in
@@ -91,7 +91,7 @@ struct MessageLibraryBatchExportView: View {
             .alert("导出失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("知道了", role: .cancel) { error = nil }
             } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 }
 
@@ -123,13 +123,13 @@ struct MessageLibraryBookmarkReviewView: View {
                     }
                     if operation == .remove {
                         Text("取消收藏会同时移除 \(report.notesRemoved) 条非空收藏备注。原消息和图片保留；需要备注时，可先返回导出包含备注的汇编。")
-                            .font(.subheadline).foregroundStyle(.orange)
+                            .font(.subheadline).foregroundStyle(HermesTheme.warning)
                     } else {
                         Text("仅为尚未收藏的消息添加收藏。已有收藏日期和备注保留；不会重新排序对话、改动草稿或发送请求。")
                             .font(.subheadline).foregroundStyle(HermesTheme.muted)
                     }
                     if let changeMessage {
-                        Label(changeMessage, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(.orange)
+                        Label(changeMessage, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(HermesTheme.warning)
                             .accessibilityIdentifier("library-batch-bookmarks-changed")
                     }
                 }.listRowBackground(HermesTheme.surface)
@@ -154,7 +154,7 @@ struct MessageLibraryBookmarkReviewView: View {
                         if operation == .remove && report.changed > 0 { confirmingRemoval = true } else { apply() }
                     } label: {
                         Label(operation.title, systemImage: operation == .add ? "bookmark" : "bookmark.slash")
-                    }.foregroundStyle(operation == .remove ? .red : HermesTheme.accent)
+                    }.foregroundStyle(operation == .remove ? HermesTheme.danger : HermesTheme.accent)
                         .disabled(changeMessage != nil).accessibilityIdentifier("library-batch-bookmarks-apply")
                 } footer: {
                     Text("提交前重新核对所有消息及来源元数据；任一所选内容改变，则整批停止并要求重新检查。生成期间可整理既有消息，当前聊天与草稿保持原状。")
@@ -170,7 +170,7 @@ struct MessageLibraryBookmarkReviewView: View {
             .alert("收藏整理失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("知道了", role: .cancel) { error = nil }
             } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
     private func metric(_ title: String, value: Int) -> some View {
         VStack(alignment: .leading, spacing: 5) {

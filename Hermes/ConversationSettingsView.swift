@@ -88,7 +88,7 @@ struct ConversationSettingsView: View {
                 }.listRowBackground(HermesTheme.surface)
                 if contextChanged {
                     Text("当前连接或对话已改变，请关闭后重新打开设置。")
-                        .foregroundStyle(.orange).listRowBackground(HermesTheme.surface)
+                        .foregroundStyle(HermesTheme.warning).listRowBackground(HermesTheme.surface)
                 }
             }
             .scrollContentBackground(.hidden).background(HermesTheme.background)
@@ -117,6 +117,6 @@ struct ConversationSettingsView: View {
                 configuration = model.conversationConfiguration
                 project = model.selectedConversation?.projectID.map(ProjectFilter.project) ?? .unassigned
             }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 }

@@ -43,7 +43,7 @@ struct RemoteJobDetailView: View {
                     }
                     if let error = job.lastError, !error.isEmpty {
                         Section("最近错误") {
-                            Text(error).font(.subheadline).foregroundStyle(.orange).textSelection(.enabled)
+                            Text(error).font(.subheadline).foregroundStyle(HermesTheme.warning).textSelection(.enabled)
                         }
                     }
                     Section {
@@ -79,9 +79,13 @@ struct RemoteJobDetailView: View {
                     }
                     Button("取消", role: .cancel) {}
                 } message: { Text("这会从服务器删除任务，并取消正在运行的任务。") }
+            } else if let error = workspace.jobDetailError {
+                RemoteLoadBanner(message: error, hasRecords: false, disabled: workspace.jobActionsDisabled) {
+                    Task { await workspace.refreshJob(jobID) }
+                }
+                .padding(HermesMetrics.page)
             } else {
-                ContentUnavailableView("任务已不在列表中", systemImage: "calendar.badge.exclamationmark",
-                    description: Text("返回列表并刷新，以查看服务端当前的任务。"))
+                ProgressView("正在读取任务…")
             }
         }
         .background(HermesTheme.background)
@@ -97,5 +101,6 @@ struct RemoteJobDetailView: View {
             }
         }
         .task { await workspace.refreshJob(jobID) }
+        .remoteActionErrorAlert(workspace)
     }
 }

@@ -112,7 +112,7 @@ struct ProjectKnowledgeView: View {
                                 .font(.caption).foregroundStyle(HermesTheme.muted)
                             if documents.count >= ProjectDocument.collectionLimit || characterCount >= ProjectDocument.projectCharacterLimit {
                                 Text("资料库已达到数量或正文字符上限。可以编辑或删除已有资料，再添加新内容。")
-                                    .font(.caption).foregroundStyle(.orange)
+                                    .font(.caption).foregroundStyle(HermesTheme.warning)
                             }
                         }.padding(.vertical, 8)
                     }.listRowBackground(Color.clear).listRowSeparator(.hidden)
@@ -176,7 +176,7 @@ struct ProjectKnowledgeView: View {
         .alert("资料导入失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button("知道了", role: .cancel) { error = nil }
         } message: { Text(error ?? "") }
-        .tint(HermesTheme.accent).preferredColorScheme(.dark)
+        .tint(HermesTheme.accent)
         .onAppear { viewActive = true }
         .onDisappear {
             if !importing && editor == nil && !managing && !addingReferences && !removingReferences {
@@ -241,7 +241,7 @@ struct ProjectDocumentRow: View {
     var referenceCount: Int? = nil
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(document.title, systemImage: "doc.text").font(.subheadline.weight(.semibold)).foregroundStyle(.white).lineLimit(2)
+            Label(document.title, systemImage: "doc.text").font(.subheadline.weight(.semibold)).foregroundStyle(HermesTheme.ink).lineLimit(2)
             Text(document.body).font(.subheadline).foregroundStyle(HermesTheme.muted).lineLimit(2)
             if let referenceCount {
                 Label(referenceCount == 0 ? "暂无已保存的引用" : "\(referenceCount) 段对话引用", systemImage: "link")
@@ -355,7 +355,7 @@ struct ProjectDocumentDetailView: View {
         .alert("资料操作失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button("知道了", role: .cancel) { error = nil }
         } message: { Text(error ?? "") }
-        .tint(HermesTheme.accent).preferredColorScheme(.dark)
+        .tint(HermesTheme.accent)
     }
 
     @ViewBuilder private func documentActions(_ document: ProjectDocument) -> some View {
@@ -442,7 +442,7 @@ struct ProjectDocumentEditorView: View {
                 Section {
                     TextField("资料标题", text: $title).accessibilityIdentifier("knowledge-editor-title")
                     Text("\(title.count) / \(ProjectDocument.titleLimit)").font(.caption)
-                        .foregroundStyle(title.count > ProjectDocument.titleLimit ? .orange : HermesTheme.muted)
+                        .foregroundStyle(title.count > ProjectDocument.titleLimit ? HermesTheme.warning : HermesTheme.muted)
                 } header: { Text("标题") }.listRowBackground(HermesTheme.surface)
                 Section {
                     TextEditor(text: $text).frame(minHeight: 260).scrollContentBackground(.hidden)
@@ -451,23 +451,23 @@ struct ProjectDocumentEditorView: View {
                         Text("\(text.count.formatted()) / \(ProjectDocument.bodyLimit.formatted()) 字符")
                         Spacer()
                         if text.count > ProjectDocument.bodyLimit { Text("正文超出上限") }
-                    }.font(.caption).foregroundStyle(text.count > ProjectDocument.bodyLimit ? .orange : HermesTheme.muted)
+                    }.font(.caption).foregroundStyle(text.count > ProjectDocument.bodyLimit ? HermesTheme.warning : HermesTheme.muted)
                 } header: { Text("完整正文") } footer: {
                     Text("保存不会自动选入对话。已引用这篇资料的对话会在后续请求使用更新后的正文；若引用合计超过 50,000 字符，保存会被拒绝，请缩短内容或先取消部分引用。")
                 }.listRowBackground(HermesTheme.surface)
                 Section {
                     LabeledContent("保存后资料库正文", value: "\(projectedCount.formatted()) / \(ProjectDocument.projectCharacterLimit.formatted()) 字符")
-                        .foregroundStyle(projectedCount > ProjectDocument.projectCharacterLimit ? .orange : HermesTheme.muted)
+                        .foregroundStyle(projectedCount > ProjectDocument.projectCharacterLimit ? HermesTheme.warning : HermesTheme.muted)
                     Text("每项目最多 \(ProjectDocument.collectionLimit) 篇资料。超出限制时需要缩短正文或整理已有资料，内容不会自动截断。")
                         .font(.caption).foregroundStyle(HermesTheme.muted)
                 }.listRowBackground(HermesTheme.surface)
                 if changedContext {
                     Text(originalDocumentMissing ? "原资料已被删除，当前输入仍保留，无法覆盖保存。需要保留时可复制内容后关闭，再新建资料。" : "当前连接或项目已改变，当前输入仍保留。请复制需要保留的内容，再返回资料库。")
-                        .foregroundStyle(.orange).listRowBackground(HermesTheme.surface)
+                        .foregroundStyle(HermesTheme.warning).listRowBackground(HermesTheme.surface)
                 }
                 if externalChange {
                     Section {
-                        Label("资料已在其他窗口更新", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                        Label("资料已在其他窗口更新", systemImage: "exclamationmark.triangle").foregroundStyle(HermesTheme.warning)
                         Text("当前输入仍留在此编辑器中，尚未覆盖最新资料。先复制输入，或确认载入最新版本后继续编辑。")
                             .font(.caption).foregroundStyle(HermesTheme.muted)
                         Button("载入最新资料") { confirmingReload = true }
@@ -508,7 +508,7 @@ struct ProjectDocumentEditorView: View {
             .alert("资料尚未保存", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("继续编辑", role: .cancel) { error = nil }
             } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
     private func save() {
         guard canSave else {
@@ -592,7 +592,7 @@ struct ProjectDocumentSelectionView: View {
             .alert("无法选择资料", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("知道了", role: .cancel) { error = nil }
             } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 
     private func selectionList(_ project: LocalProject) -> some View {
@@ -616,7 +616,7 @@ struct ProjectDocumentSelectionView: View {
             }.listRowBackground(Color.clear)
             if externalSelectionChange {
                 Section {
-                    Label("引用已在其他窗口改变", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                    Label("引用已在其他窗口改变", systemImage: "exclamationmark.triangle").foregroundStyle(HermesTheme.warning)
                     Text("本次整理尚未保存，不会覆盖其他窗口的新选择。请载入当前已保存的引用后重新整理。")
                         .font(.caption).foregroundStyle(HermesTheme.muted)
                     Button("载入当前选择") { confirmingSelectionReload = true }.disabled(!canChange)
@@ -647,14 +647,14 @@ struct ProjectDocumentSelectionView: View {
             if missingSelections || selectedCharacterCount > ProjectDocument.selectionCharacterLimit {
                 Section {
                     Text("资料库已发生变化，请调整选择或重新载入。超出字符上限时不能保存，正文不会截断。")
-                        .font(.caption).foregroundStyle(.orange)
+                        .font(.caption).foregroundStyle(HermesTheme.warning)
                     Button("重新载入已保存的选择") { confirmingSelectionReload = true }.disabled(!canChange)
                 }.listRowBackground(HermesTheme.surface)
             }
             if model.isSending || model.needsRecovery {
                 Section {
                     Text(model.needsRecovery ? "本机数据需要恢复，当前不能保存资料选择。" : "回复正在生成，请等待完成或停止后再调整资料选择。")
-                        .font(.caption).foregroundStyle(.orange)
+                        .font(.caption).foregroundStyle(HermesTheme.warning)
                 }.listRowBackground(HermesTheme.surface)
             }
             Section("\(visible.count) 篇可选资料") {

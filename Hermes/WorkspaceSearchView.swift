@@ -43,7 +43,7 @@ struct WorkspaceSearchView: View {
                 ContentUnavailableView("想找的内容，一处查找", systemImage: "magnifyingglass", description: Text("输入项目名、资料正文、对话标题、消息或草稿中的文字。"))
                     .listRowBackground(Color.clear)
             } else if query.trimmingCharacters(in: .whitespacesAndNewlines).count > WorkspaceSearch.queryLimit {
-                Text("关键词最多 \(WorkspaceSearch.queryLimit) 字符，请缩短后重试。").foregroundStyle(.orange)
+                Text("关键词最多 \(WorkspaceSearch.queryLimit) 字符，请缩短后重试。").foregroundStyle(HermesTheme.warning)
             } else if !ready {
                 HStack { ProgressView(); Text("正在本机检索…").font(.subheadline) }.listRowBackground(Color.clear)
             } else if report.total == 0 || (kind != nil && report.counts[kind!, default: 0] == 0) {

@@ -41,7 +41,7 @@ struct ChatContextPreviewView: View {
                 if stale {
                     Section {
                         Label("草稿、对话或设置已改变，请返回后重新预览。", systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(HermesTheme.warning)
                     }.listRowBackground(HermesTheme.surface)
                 }
                 if !preview.plan.effectiveSystemPrompt.isEmpty {
@@ -84,7 +84,7 @@ struct ChatContextPreviewView: View {
             .scrollContentBackground(.hidden).background(HermesTheme.background)
             .navigationTitle("上下文预览").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("返回编辑") { dismiss() } } }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 }
 

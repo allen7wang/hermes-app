@@ -107,7 +107,7 @@ struct PromptLibraryView: View {
                 Button("知道了", role: .cancel) { failure = nil }
             } message: { Text(failure ?? "") }
         }
-        .tint(HermesTheme.accent).preferredColorScheme(.dark)
+        .tint(HermesTheme.accent)
     }
 
     private func row(_ template: PromptTemplate) -> some View {
@@ -196,7 +196,7 @@ private struct PromptTemplateEditorView: View {
                     }.disabled(validation != nil || model.needsRecovery)
                 }
             }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 }
 
@@ -222,7 +222,7 @@ private struct PromptTemplateFillView: View {
                             TextField("填写\(name)", text: Binding(get: { values[name] ?? "" }, set: { values[name] = $0 }), axis: .vertical)
                                 .lineLimit(2...8).accessibilityLabel("模板变量：\(name)").focused($focusedVariable, equals: name)
                             if (values[name]?.count ?? 0) > PromptRendering.valueLimit {
-                                Text("最多 10,000 字符").font(.caption).foregroundStyle(.orange)
+                                Text("最多 10,000 字符").font(.caption).foregroundStyle(HermesTheme.warning)
                             }
                         }.padding(.vertical, 4)
                     }
@@ -249,7 +249,7 @@ private struct PromptTemplateFillView: View {
                 Text("套用后返回对话；检查草稿，再手动发送。图片保持当前选择，模板本身不附带图片。")
                     .font(.footnote).foregroundStyle(HermesTheme.muted)
             }
-            if let failure { Section { Text(failure).foregroundStyle(.orange) } }
+            if let failure { Section { Text(failure).foregroundStyle(HermesTheme.warning) } }
             Section {
                 DisclosureGroup("查看模板原文") { Text(template.body).font(.caption).foregroundStyle(HermesTheme.muted) }
             }

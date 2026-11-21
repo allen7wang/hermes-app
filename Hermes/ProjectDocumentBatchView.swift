@@ -49,7 +49,7 @@ struct ProjectDocumentBatchView: View {
                     let hidden = selected.filter { item in !visible.contains { $0.id == item.id } }.count
                     if hidden > 0 {
                         Text("其中 \(hidden) 篇被搜索或引用筛选隐藏，仍在本次选择中。")
-                            .font(.caption).foregroundStyle(.orange)
+                            .font(.caption).foregroundStyle(HermesTheme.warning)
                     }
                     HStack {
                         Button(allVisibleSelected ? "取消选择当前结果" : "选择当前结果") {
@@ -60,8 +60,8 @@ struct ProjectDocumentBatchView: View {
                         Spacer()
                         Button("清空选择") { selection = []; message = nil }.disabled(selection.isEmpty)
                     }.font(.subheadline)
-                    if let message { Label(message, systemImage: "checkmark.circle").font(.subheadline).foregroundStyle(.green) }
-                    if unavailable { Text("当前连接、项目或写入状态暂不可用，请返回检查。 ").font(.caption).foregroundStyle(.orange) }
+                    if let message { Label(message, systemImage: "checkmark.circle").font(.subheadline).foregroundStyle(HermesTheme.success) }
+                    if unavailable { Text("当前连接、项目或写入状态暂不可用，请返回检查。 ").font(.caption).foregroundStyle(HermesTheme.warning) }
                 }.listRowBackground(HermesTheme.surface)
                 Section {
                     ProjectDocumentUsageControls(filter: $usageFilter, sort: $usageSort)
@@ -140,7 +140,7 @@ struct ProjectDocumentBatchView: View {
             } message: { Text(error ?? "") }
             .onChange(of: documents.map(\.id)) { _, ids in selection.formIntersection(ids) }
             .onChange(of: model.activeProfileID) { _, _ in selection = []; message = nil }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 
     private func review(_ present: (DocumentBatchReview) -> Void) {
@@ -181,7 +181,7 @@ struct ProjectDocumentCopyView: View {
                     Text("复制 \(documents.count) 篇 · \(documents.reduce(0) { $0 + $1.body.count }.formatted()) 正文字符").font(.headline)
                     Text("确认后一次性保存到目标项目。同名资料会作为独立副本保留，复制后的编辑互不影响。需要使用时，再在目标对话中选择引用。")
                         .font(.subheadline).foregroundStyle(HermesTheme.muted)
-                    if sourceChanged { Text("所选资料已改变，请关闭并重新选择。").foregroundStyle(.orange) }
+                    if sourceChanged { Text("所选资料已改变，请关闭并重新选择。").foregroundStyle(HermesTheme.warning) }
                 }.listRowBackground(HermesTheme.surface)
                 Section("选择目标项目") {
                     if targets.isEmpty { Text("请先在当前连接中创建另一个项目。").foregroundStyle(HermesTheme.muted) }
@@ -190,10 +190,10 @@ struct ProjectDocumentCopyView: View {
                             HStack(alignment: .top, spacing: 12) {
                                 Image(systemName: targetID == project.id ? "checkmark.circle.fill" : "circle").foregroundStyle(HermesTheme.accent)
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text(project.name).foregroundStyle(.white)
+                                    Text(project.name).foregroundStyle(HermesTheme.ink)
                                     Text("复制后 \(project.documents.count + documents.count) / 20 篇 · \((project.documents + documents).reduce(0) { $0 + $1.body.count }.formatted()) / 200,000 字符")
-                                        .font(.caption).foregroundStyle(capacityOK(project) ? HermesTheme.muted : .orange)
-                                    if !capacityOK(project) { Text("容量不足，请先整理目标项目").font(.caption).foregroundStyle(.orange) }
+                                        .font(.caption).foregroundStyle(capacityOK(project) ? HermesTheme.muted : HermesTheme.warning)
+                                    if !capacityOK(project) { Text("容量不足，请先整理目标项目").font(.caption).foregroundStyle(HermesTheme.warning) }
                                 }
                             }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
                         }.buttonStyle(.plain).disabled(!capacityOK(project) || sourceChanged || model.isSending || model.needsRecovery)
@@ -217,7 +217,7 @@ struct ProjectDocumentCopyView: View {
             .alert("复制失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("知道了", role: .cancel) { error = nil }
             } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
     private func copy() {
         guard let target else { return }
@@ -274,7 +274,7 @@ struct ProjectDocumentExportView: View {
             .alert("导出失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("知道了", role: .cancel) { error = nil }
             } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
     private func markdown() throws -> String { try ProjectDocumentBatch.markdown(projectName: projectName, documents: documents) }
 }

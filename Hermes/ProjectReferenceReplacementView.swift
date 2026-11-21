@@ -54,8 +54,8 @@ struct ProjectReferenceReplacementView: View {
                             DisclosureGroup("旧资料：\(source.title)") {
                                 Text(source.body).font(.subheadline).textSelection(.enabled)
                             }
-                            if unavailable { Text("回复进行中或本机状态暂不可用，请返回检查后重试。").font(.caption).foregroundStyle(.orange) }
-                            if let message { Label(message, systemImage: "checkmark.circle").font(.subheadline).foregroundStyle(.green) }
+                            if unavailable { Text("回复进行中或本机状态暂不可用，请返回检查后重试。").font(.caption).foregroundStyle(HermesTheme.warning) }
+                            if let message { Label(message, systemImage: "checkmark.circle").font(.subheadline).foregroundStyle(HermesTheme.success) }
                         }.listRowBackground(HermesTheme.surface)
                         Section {
                             Picker("替换为", selection: $targetID) {
@@ -75,7 +75,7 @@ struct ProjectReferenceReplacementView: View {
                             Text("已选 \(selection.count) / \(records.count) 段对话").font(.headline)
                                 .accessibilityIdentifier("knowledge-replacement-count")
                             let hidden = selection.subtracting(visible.map(\.id)).count
-                            if hidden > 0 { Text("另有 \(hidden) 段已选对话被搜索隐藏，仍会纳入检查。").font(.caption).foregroundStyle(.orange) }
+                            if hidden > 0 { Text("另有 \(hidden) 段已选对话被搜索隐藏，仍会纳入检查。").font(.caption).foregroundStyle(HermesTheme.warning) }
                             HStack {
                                 Button(allVisibleSelected ? "取消选择当前结果" : "选择当前结果") {
                                     let ids = Set(visible.map(\.id))
@@ -86,7 +86,7 @@ struct ProjectReferenceReplacementView: View {
                                 Button("清空选择") { selection = []; message = nil }.disabled(selection.isEmpty)
                             }.font(.subheadline)
                             if records.isEmpty { Text("当前没有对话保存了这篇资料的引用。").font(.subheadline).foregroundStyle(HermesTheme.muted) }
-                            if let selectionIssue { Text(selectionIssue).font(.subheadline).foregroundStyle(.orange) }
+                            if let selectionIssue { Text(selectionIssue).font(.subheadline).foregroundStyle(HermesTheme.warning) }
                         } header: { Text("2 · 明确选择对话") } footer: {
                             Text("列表包含进行中、归档和回收站，初始均未选择。只有明确选中的对话会更新；可取消超限项后继续。")
                         }.listRowBackground(HermesTheme.surface)
@@ -104,7 +104,7 @@ struct ProjectReferenceReplacementView: View {
                                                 Image(systemName: selection.contains(conversation.id) ? "checkmark.circle.fill" : "circle")
                                                     .foregroundStyle(HermesTheme.accent)
                                                 VStack(alignment: .leading, spacing: 7) {
-                                                    Text(conversation.title).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                                                    Text(conversation.title).font(.subheadline.weight(.semibold)).foregroundStyle(HermesTheme.ink)
                                                     Text("当前选择 \((conversation.referenceDocumentIDs ?? []).count) 篇资料")
                                                         .font(.caption).foregroundStyle(HermesTheme.muted)
                                                 }
@@ -142,7 +142,7 @@ struct ProjectReferenceReplacementView: View {
             .onChange(of: records.map(\.id)) { _, ids in selection.formIntersection(ids) }
             .onChange(of: model.activeProfileID) { _, _ in selection = []; targetID = nil; message = nil }
             .onChange(of: targetID) { _, _ in message = nil }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
     private func status(_ conversation: Conversation) -> ProjectDocumentUsage.Status {
         conversation.isTrashed ? .trash : conversation.isArchived ? .archived : .active
@@ -189,7 +189,7 @@ struct ProjectReferenceReplacementReviewView: View {
                     Text("只更新下列对话当前保存的资料选择。原资料、历史消息、收藏、草稿和日期保留；后续发送使用新选择，历史回复编号不会重写。")
                         .font(.subheadline).foregroundStyle(HermesTheme.muted)
                     if let changeMessage {
-                        Label(changeMessage, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(.orange)
+                        Label(changeMessage, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(HermesTheme.warning)
                             .accessibilityIdentifier("knowledge-replacement-changed")
                     }
                 }.listRowBackground(HermesTheme.surface)
@@ -232,7 +232,7 @@ struct ProjectReferenceReplacementReviewView: View {
             .alert("引用替换失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("知道了", role: .cancel) { error = nil }
             } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
     private func selectionList(_ ids: [UUID], title: String) -> some View {
         VStack(alignment: .leading, spacing: 7) {

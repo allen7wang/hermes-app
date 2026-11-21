@@ -4,6 +4,7 @@ struct SettingsView: View {
     var embedded = false
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(HermesAppearance.storageKey) private var appearance = HermesAppearance.system.rawValue
     @State private var showingEditor = false
     @State private var editingID: UUID?
     @State private var deletingProfile: ConnectionProfile?
@@ -13,14 +14,21 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Label("连接你自己的 Hermes", systemImage: "server.rack")
-                        .foregroundStyle(HermesTheme.accent)
-                    Text("为家中、工作或远程服务器分别保存连接。每个连接都有独立的本机对话、文字草稿和钥匙串密钥。")
-                        .font(.subheadline).foregroundStyle(HermesTheme.muted)
+                    HStack(spacing: 14) {
+                        HermesMark(size: 48)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.activeProfileName).font(.title3.weight(.bold)).foregroundStyle(HermesTheme.ink).lineLimit(1)
+                            Text(model.settings.isConfigured ? model.settings.serverURL : "尚未配置服务地址")
+                                .font(.caption).foregroundStyle(HermesTheme.muted).lineLimit(1)
+                            Text("每个连接都有独立的本机对话、草稿和钥匙串密钥。")
+                                .font(.caption2).foregroundStyle(HermesTheme.muted)
+                        }
+                    }
+                    .padding(.vertical, 6)
                 }
                 .listRowBackground(HermesTheme.surface)
 
-                Section("已保存的连接") {
+                Section {
                     ForEach(model.profiles) { profile in
                         HStack(spacing: 12) {
                             Button {
@@ -28,26 +36,31 @@ struct SettingsView: View {
                             } label: {
                                 HStack(spacing: 12) {
                                     Image(systemName: profile.id == model.activeProfileID ? "checkmark.circle.fill" : "circle")
+                                        .font(.title3)
                                         .foregroundStyle(profile.id == model.activeProfileID ? HermesTheme.accent : HermesTheme.muted)
-                                    VStack(alignment: .leading, spacing: 5) {
-                                        Text(profile.name).font(.body.weight(.semibold)).foregroundStyle(.white)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(profile.name).font(.body.weight(.semibold)).foregroundStyle(HermesTheme.ink)
                                         Text(profile.serverURL.isEmpty ? "尚未配置" : profile.serverURL)
                                             .font(.caption).foregroundStyle(HermesTheme.muted).lineLimit(1)
                                         if profile.id == model.activeProfileID {
                                             Text("当前连接 · \(profile.model)")
-                                                .font(.caption).foregroundStyle(HermesTheme.accent).lineLimit(1)
+                                                .font(.caption2.weight(.medium)).foregroundStyle(HermesTheme.accent).lineLimit(1)
                                         }
                                     }
                                     Spacer(minLength: 0)
                                 }
-                                .padding(.vertical, 5)
+                                .padding(.vertical, 3)
                             }
                             .buttonStyle(.borderless)
                             .accessibilityLabel("切换到 \(profile.name)")
                             Button {
                                 editingID = profile.id
                                 showingEditor = true
-                            } label: { Image(systemName: "pencil").padding(6) }
+                            } label: {
+                                Image(systemName: "pencil").font(.subheadline.weight(.semibold))
+                                    .frame(width: 32, height: 32)
+                                    .background(HermesTheme.raised, in: Circle())
+                            }
                                 .buttonStyle(.borderless)
                                 .accessibilityLabel("编辑 \(profile.name)")
                         }
@@ -58,52 +71,55 @@ struct SettingsView: View {
                     Button {
                         editingID = nil
                         showingEditor = true
-                    } label: { Label("添加连接", systemImage: "plus.circle") }
+                    } label: { NavigationRowLabel(title: "添加连接", icon: "plus") }
                     NavigationLink {
                         PairingCodeView()
-                    } label: {
-                        Label("显示配对码", systemImage: "qrcode")
-                    }
+                    } label: { NavigationRowLabel(title: "显示配对码", subtitle: "让另一台手机扫码添加当前连接", icon: "qrcode", tone: .info) }
                     NavigationLink {
                         PairingScanView()
-                    } label: {
-                        Label("扫码添加连接", systemImage: "qrcode.viewfinder")
-                    }
-                }
+                    } label: { NavigationRowLabel(title: "扫码添加连接", icon: "qrcode.viewfinder", tone: .info) }
+                } header: { Text("连接") }
+                footer: { if model.isSending { Text("回复进行中，停止或完成后即可修改连接。") } }
                 .disabled(model.isSending)
                 .listRowBackground(HermesTheme.surface)
 
-                if model.isSending {
-                    Section { Text("回复进行中，停止或完成后即可修改连接。").font(.footnote) }
-                        .listRowBackground(HermesTheme.surface)
-                }
-
                 Section {
+                    Picker(selection: $appearance) {
+                        ForEach(HermesAppearance.allCases) { Text($0.title).tag($0.rawValue) }
+                    } label: { NavigationRowLabel(title: "外观", icon: "circle.lefthalf.filled", tone: .neutral) }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("settings-appearance")
+                } header: { Text("显示") } footer: { Text("外观设置只保存在这台设备上，不进入备份。") }
+                .listRowBackground(HermesTheme.surface)
+
+                Section("数据") {
                     NavigationLink { BackupView() } label: {
-                        Label("备份与恢复", systemImage: "externaldrive")
+                        NavigationRowLabel(title: "备份与恢复", subtitle: "导出或合并导入 JSON 备份", icon: "externaldrive.fill", tone: .success)
                     }
                 }
                 .listRowBackground(HermesTheme.surface)
 
-                Section("在 Mac 上启用") {
-                    Text("在 ~/.hermes/.env 中设置 API_SERVER_ENABLED=true 和 API_SERVER_KEY，然后运行 hermes gateway。默认服务端口是 8642。填写手机可访问的地址，远程连接使用 HTTPS。")
-                        .font(.footnote).textSelection(.enabled)
+                Section("帮助") {
+                    DisclosureGroup {
+                        Text("在 ~/.hermes/.env 中设置 API_SERVER_ENABLED=true 和 API_SERVER_KEY，然后运行 hermes gateway。默认服务端口是 8642。填写手机可访问的地址，远程连接使用 HTTPS。")
+                            .font(.footnote).foregroundStyle(HermesTheme.muted).textSelection(.enabled)
+                    } label: { NavigationRowLabel(title: "在 Mac 上启用", icon: "laptopcomputer", tone: .warning) }
                 }
                 .listRowBackground(HermesTheme.surface)
 
-                Section("关于 Hermes") {
+                Section {
                     LabeledContent("版本", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—")
+                } header: { Text("关于 Hermes") } footer: {
                     Text("本机记录、标签、草稿与对话设置保存在设备上。服务端会话和定时任务由你连接的服务器管理。")
-                        .font(.footnote).foregroundStyle(HermesTheme.muted)
-                }.listRowBackground(HermesTheme.surface)
+                }
+                .listRowBackground(HermesTheme.surface)
             }
-            .scrollContentBackground(.hidden)
-            .background(HermesTheme.background)
+            .hermesPage()
             .navigationDestination(isPresented: $showingEditor) {
                 ConnectionEditorView(profileID: editingID)
             }
-            .navigationTitle("连接管理")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(embedded ? "设置" : "连接管理")
+            .navigationBarTitleDisplayMode(embedded ? .large : .inline)
             .toolbar { if !embedded { ToolbarItem(placement: .topBarTrailing) { Button("完成") { dismiss() } } } }
             .tint(HermesTheme.accent)
             .confirmationDialog("删除“\(deletingProfile?.name ?? "")”？", isPresented: Binding(
@@ -124,7 +140,6 @@ struct SettingsView: View {
             )) { Button("知道了", role: .cancel) { errorMessage = nil } }
             message: { Text(errorMessage ?? "") }
         }
-        .preferredColorScheme(.dark)
     }
 }
 
@@ -193,19 +208,21 @@ struct ConnectionEditorView: View {
 
             Section {
                 Button { Task { await saveAndTest() } } label: {
-                    HStack {
-                        if isBusy { ProgressView() }
-                        Text(isBusy ? "正在连接…" : "保存并测试连接").fontWeight(.semibold)
+                    HStack(spacing: 8) {
+                        if isBusy { ProgressView().tint(HermesTheme.onAccent) }
+                        Text(isBusy ? "正在连接…" : "保存并测试连接")
                     }
                 }
+                .buttonStyle(HermesPrimaryButtonStyle())
                 .disabled(!canSave)
             }
-            .listRowBackground(HermesTheme.raised)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
 
             if let feedback {
                 Section {
                     Label(feedback, systemImage: succeeded ? "checkmark.circle.fill" : "exclamationmark.circle")
-                        .font(.subheadline).foregroundStyle(succeeded ? Color.green : Color.orange)
+                        .font(.subheadline).foregroundStyle(succeeded ? HermesTheme.success : HermesTheme.warning)
                 }
                 .listRowBackground(HermesTheme.surface)
             }

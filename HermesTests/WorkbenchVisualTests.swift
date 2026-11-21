@@ -62,9 +62,7 @@ final class WorkbenchVisualTests: XCTestCase {
         }
         XCTAssertGreaterThan(image.size.width, 300)
         let data = try XCTUnwrap(image.pngData())
-        let directory = URL(fileURLWithPath: "/private/tmp/hermes-v1-1-previews")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try data.write(to: directory.appendingPathComponent(name + ".png"))
+        XCTAssertGreaterThan(data.count, 1_000)
         let attachment = XCTAttachment(image: image)
         attachment.name = name; attachment.lifetime = .keepAlways
         add(attachment)

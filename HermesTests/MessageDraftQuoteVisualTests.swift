@@ -77,9 +77,6 @@ final class MessageDraftQuoteVisualTests: XCTestCase {
         XCTAssertEqual(image.size.height, size.height, accuracy: 1)
         let data = try XCTUnwrap(image.pngData())
         XCTAssertGreaterThan(data.count, 1_000)
-        let directory = URL(fileURLWithPath: "/private/tmp/hermes-v3-7-previews", isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try data.write(to: directory.appendingPathComponent(name + ".png"), options: .atomic)
         let attachment = XCTAttachment(image: image)
         attachment.name = name
         attachment.lifetime = .keepAlways

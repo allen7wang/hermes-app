@@ -45,9 +45,6 @@ final class ProjectReferenceRemovalVisualTests: XCTestCase {
         }
         let data = try XCTUnwrap(image.pngData()); XCTAssertGreaterThan(data.count, 1_000)
         XCTAssertEqual(image.size.width, size.width, accuracy: 1); XCTAssertEqual(image.size.height, size.height, accuracy: 1)
-        let directory = URL(fileURLWithPath: "/private/tmp/hermes-refremove-20261024-previews")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try data.write(to: directory.appendingPathComponent(name + ".png"), options: .atomic)
         let attachment = XCTAttachment(image: image); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
 }

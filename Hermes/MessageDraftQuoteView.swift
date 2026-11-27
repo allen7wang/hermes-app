@@ -43,7 +43,7 @@ struct MessageDraftQuoteReviewView: View {
                 destinationSection
                 if applied {
                     Section {
-                        Label("引用已保存到目标草稿", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                        Label("引用已保存到目标草稿", systemImage: "checkmark.circle.fill").foregroundStyle(HermesTheme.success)
                         Text("尚未发送。返回目标对话，继续编辑并检查发送上下文。来源消息与收藏保持原状。")
                             .font(.subheadline).foregroundStyle(HermesTheme.muted)
                         Button("查看目标草稿", systemImage: "square.and.pencil") {
@@ -52,7 +52,7 @@ struct MessageDraftQuoteReviewView: View {
                         }.disabled(!canShowDraft).accessibilityIdentifier("draft-quote-show-draft")
                         if !canShowDraft {
                             Text("当前对话已切换或归档，请从对话记录打开目标草稿。")
-                                .font(.caption).foregroundStyle(.orange)
+                                .font(.caption).foregroundStyle(HermesTheme.warning)
                         }
                     }.listRowBackground(HermesTheme.surface)
                 } else {
@@ -86,7 +86,7 @@ struct MessageDraftQuoteReviewView: View {
             .alert("引用未保存", isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } })) {
                 Button("知道了", role: .cancel) { failure = nil }
             } message: { Text(failure ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 
     private var destinationSection: some View {
@@ -111,7 +111,7 @@ struct MessageDraftQuoteReviewView: View {
             Text(mode == .append ? "保留原草稿，在末尾空一行后追加完整引用。" : "用完整引用替换原草稿；原草稿非空时还需确认。")
                 .font(.subheadline).foregroundStyle(HermesTheme.muted)
             if let changeMessage {
-                Label(changeMessage, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(.orange)
+                Label(changeMessage, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(HermesTheme.warning)
                     .accessibilityIdentifier("draft-quote-changed")
                 Text("此页保留打开时的预览。返回重新选择，获取最新来源与草稿；不会自动覆盖新输入。")
                     .font(.caption).foregroundStyle(HermesTheme.muted)
@@ -122,7 +122,7 @@ struct MessageDraftQuoteReviewView: View {
     private var previewSection: some View {
         Section("检查完整内容") {
             if preparing { HStack { ProgressView(); Text("正在准备完整引用…").font(.subheadline) } }
-            if let buildError { Text(buildError).foregroundStyle(.orange).font(.subheadline) }
+            if let buildError { Text(buildError).foregroundStyle(HermesTheme.warning).font(.subheadline) }
             if let reference {
                 DisclosureGroup("完整引用 · \(reference.count.formatted()) 字符") {
                     Text(reference).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
@@ -138,7 +138,7 @@ struct MessageDraftQuoteReviewView: View {
                         Text(text).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
                     }.accessibilityIdentifier("draft-quote-final-preview")
                 case .failure(let error):
-                    Text(error.localizedDescription).font(.subheadline).foregroundStyle(.orange)
+                    Text(error.localizedDescription).font(.subheadline).foregroundStyle(HermesTheme.warning)
                 }
             }
             Text("完整引用按消息时间从新到旧排列，包含来源信息与完整正文，不包含收藏备注；图片只留占位，不附加图片文件。正文与引用标记都计入草稿上限，超限不会截断。")

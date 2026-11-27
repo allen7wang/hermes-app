@@ -67,7 +67,6 @@ struct RemoteJobEditorView: View {
                 Button("知道了", role: .cancel) { errorMessage = nil }
             } message: { Text(errorMessage ?? "") }
         }
-        .preferredColorScheme(.dark)
         .interactiveDismissDisabled(saving)
         .onAppear {
             if let job {
@@ -85,7 +84,7 @@ struct RemoteJobEditorView: View {
         saving = true
         defer { saving = false }
         do {
-            let client = HermesClient(settings: model.settings)
+            let client = model.makeRemoteClient()
             if let job, !copying {
                 _ = try await client.updateJob(job.id, fields: changedFields)
             } else {

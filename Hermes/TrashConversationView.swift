@@ -44,6 +44,6 @@ struct TrashConversationView: View {
             .alert("恢复失败", isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } })) {
                 Button("知道了", role: .cancel) { failure = nil }
             } message: { Text(failure ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 }

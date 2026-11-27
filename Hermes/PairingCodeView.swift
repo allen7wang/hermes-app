@@ -11,7 +11,7 @@ struct PairingCodeView: View {
                 content
                 Text("配对码含密钥，只给你自己的另一台手机扫。")
                     .font(.footnote)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(HermesTheme.warning)
                     .multilineTextAlignment(.center)
             }
             .padding(24)
@@ -21,7 +21,6 @@ struct PairingCodeView: View {
         .background(HermesTheme.background)
         .navigationTitle("配对码")
         .navigationBarTitleDisplayMode(.inline)
-        .preferredColorScheme(.dark)
     }
 
     private var content: some View {
@@ -67,7 +66,7 @@ private struct PairingCodeBody: View {
                 description: Text("请先将连接地址改为另一台手机能访问的局域网地址或 HTTPS 地址，再生成配对码。"))
         } else if !encoded.isEmpty, let image = PairingQRImage.make(encoded) {
             VStack(spacing: 8) {
-                Text(name).font(.title3.weight(.semibold)).foregroundStyle(.white)
+                Text(name).font(.title3.weight(.semibold)).foregroundStyle(HermesTheme.ink)
                 Text(url).font(.footnote).foregroundStyle(HermesTheme.muted)
                     .textSelection(.enabled).multilineTextAlignment(.center)
             }

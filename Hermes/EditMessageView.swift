@@ -33,7 +33,7 @@ struct EditMessageView: View {
                         .font(.subheadline).foregroundStyle(HermesTheme.muted)
                 }
                 if let failure {
-                    Section { Text(failure).foregroundStyle(.red).font(.subheadline) }
+                    Section { Text(failure).foregroundStyle(HermesTheme.danger).font(.subheadline) }
                 }
             }
             .scrollContentBackground(.hidden).background(HermesTheme.background)
@@ -52,6 +52,6 @@ struct EditMessageView: View {
                 }
             }
         }
-        .tint(HermesTheme.accent).preferredColorScheme(.dark)
+        .tint(HermesTheme.accent)
     }
 }

@@ -19,9 +19,7 @@ struct ChatView: View {
     var initialTarget: LocalMessageTarget? = nil
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
-    @State private var showingHistory = false
     @State private var showingSettings = false
-    @State private var showingRemote = false
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var pendingImage: Data?
     @State private var loadingPhoto = false
@@ -38,28 +36,29 @@ struct ChatView: View {
     @State private var exportDocument: ConversationDocument?
     @State private var exporting = false
     @State private var contextPreview: ChatContextPreview?
-    @State private var showingProjects = false
     @State private var referenceSelection: ProjectReferenceSelectionTarget?
     @State private var documentCapture: ProjectDocumentCapture?
 
     var body: some View {
         VStack(spacing: 0) {
             header
-            Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1)
             configurationBar
+            Rectangle().fill(HermesTheme.hairline).frame(height: 1)
             if model.selectedConversation?.isArchived == true {
                 HStack {
-                    Label("已归档 · 恢复后可继续发送", systemImage: "archivebox")
+                    Label("已归档 · 恢复后可继续发送", systemImage: "archivebox").foregroundStyle(HermesTheme.ink)
                     Spacer()
                     Button("恢复") {
                         if let id = model.selectedID { performLocalAction { try model.setArchived([id], archived: false) } }
-                    }.disabled(model.isSending)
-                }.font(.caption).padding(12).background(HermesTheme.surface)
+                    }
+                    .buttonStyle(HermesPillButtonStyle(tone: .accent))
+                    .disabled(model.isSending)
+                }.font(.caption).padding(.horizontal, 16).padding(.vertical, 8).background(HermesTheme.warning.opacity(0.12))
             }
 
             ChatTimeline(contextID: model.selectedID?.uuidString ?? "new", updateToken: timelineToken, jumpRequest: $jumpRequest) { _, _ in
                 if let conversation = model.selectedConversation {
-                    LazyVStack(spacing: 20) {
+                    LazyVStack(spacing: 22) {
                         ForEach(conversation.messages) { message in
                             MessageBubble(message: message, attachmentDirectory: model.attachmentDirectory,
                                           highlighted: highlightedID == message.id.uuidString,
@@ -114,13 +113,14 @@ struct ChatView: View {
                         }
                         if model.isSending { thinkingIndicator }
                         else if conversation.messages.last?.role == .user {
-                            Button { model.retryLastResponse() } label: {
-                                Label("生成回复", systemImage: "arrow.clockwise")
-                                    .font(.system(size: 13, weight: .medium)).foregroundStyle(HermesTheme.accent)
-                            }.padding(.top, 4)
+                            HStack {
+                                Button { model.retryLastResponse() } label: { Label("生成回复", systemImage: "arrow.clockwise") }
+                                    .buttonStyle(HermesPillButtonStyle(tone: .accent))
+                                Spacer()
+                            }
                         }
                     }
-                    .padding(.horizontal, 18).padding(.top, 26).padding(.bottom, 24)
+                    .padding(.horizontal, 18).padding(.top, 20).padding(.bottom, 24)
                 } else {
                     welcome.frame(maxWidth: .infinity, minHeight: 480)
                 }
@@ -130,14 +130,9 @@ struct ChatView: View {
                 .disabled(model.selectedConversation?.isArchived == true)
         }
         .background(HermesTheme.background.ignoresSafeArea())
-        .sheet(isPresented: $showingHistory) { HistoryView() }
-        .sheet(isPresented: $showingRemote) { RemoteWorkspaceView() }
         .sheet(isPresented: $showingSettings) { SettingsView() }
         .sheet(item: $contextPreview) { preview in
             ChatContextPreviewView(preview: preview, pendingImage: pendingImage)
-        }
-        .sheet(isPresented: $showingProjects) {
-            ProjectWorkspaceView { showingProjects = false }
         }
         .sheet(item: $referenceSelection) { target in
             ProjectDocumentSelectionView(conversationID: target.conversationID, profileID: target.profileID)
@@ -221,22 +216,18 @@ struct ChatView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 4) {
             Button { dismiss() } label: {
-                Image(systemName: "arrow.left")
-                    .font(.system(size: 19, weight: .medium))
-                    .frame(width: 42, height: 42)
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 40, height: 44)
             }
             .accessibilityLabel("返回对话工作台")
 
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 7) {
-                    Image(systemName: "circle.hexagongrid.fill")
-                        .foregroundStyle(HermesTheme.accent)
-                    Text(model.selectedConversation?.title ?? "新对话")
-                        .lineLimit(1)
-                }
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                Text(model.selectedConversation?.title ?? "新对话")
+                    .font(.headline).foregroundStyle(HermesTheme.ink)
+                    .lineLimit(1)
                 Button {
                     if model.settings.isConfigured {
                         Task { await model.checkConnection() }
@@ -244,13 +235,11 @@ struct ChatView: View {
                         showingSettings = true
                     }
                 } label: {
-                    HStack(spacing: 5) {
-                        Circle()
-                            .fill(model.connectionState == .connected ? Color.green : HermesTheme.muted)
-                            .frame(width: 6, height: 6)
+                    HStack(spacing: 6) {
+                        StatusDot(tone: connectionTone, size: 6)
                         Text("\(model.activeProfileName) · \(connectionLabel)")
                             .lineLimit(1)
-                            .font(.system(size: 11))
+                            .font(.caption)
                             .foregroundStyle(HermesTheme.muted)
                     }
                 }
@@ -264,98 +253,99 @@ struct ChatView: View {
                     }.accessibilityIdentifier("chat-new-project-conversation")
                     Button("开始未分配的新对话", systemImage: "square.and.pencil") { model.newConversation() }
                 } label: {
-                    Image(systemName: "square.and.pencil").font(.system(size: 18)).frame(width: 42, height: 42)
+                    Image(systemName: "square.and.pencil").font(.system(size: 18)).frame(width: 42, height: 44)
                 }.disabled(model.isSending || model.needsRecovery).accessibilityLabel("新对话选项")
             } else {
                 Button { model.newConversation() } label: {
                     Image(systemName: "square.and.pencil")
                         .font(.system(size: 18))
-                        .frame(width: 42, height: 42)
+                        .frame(width: 42, height: 44)
                 }
                 .disabled(model.isSending)
                 .accessibilityLabel("新对话")
             }
             Menu {
-                Button("对话工作台", systemImage: "rectangle.grid.1x2") { showingHistory = true }
-                Button("项目工作区", systemImage: "folder") { showingProjects = true }
-                Button("对话设置与标签", systemImage: "slider.horizontal.3") { openConfiguration() }
-                    .disabled(model.isSending)
-                if let conversation = model.selectedConversation {
-                    Button("导出 Markdown", systemImage: "square.and.arrow.up") {
-                        exportDocument = ConversationDocument(text: ConversationWorkbench.markdown([conversation]))
-                        exporting = true
+                Section {
+                    Button("对话设置与标签", systemImage: "slider.horizontal.3") { openConfiguration() }
+                        .disabled(model.isSending)
+                    Button("查找消息", systemImage: "magnifyingglass") { showingSearch = true }
+                        .disabled(model.selectedConversation?.messages.isEmpty != false)
+                    if let conversation = model.selectedConversation {
+                        Button("导出 Markdown", systemImage: "square.and.arrow.up") {
+                            exportDocument = ConversationDocument(text: ConversationWorkbench.markdown([conversation]))
+                            exporting = true
+                        }
                     }
                 }
-                Button("提示词模板", systemImage: "text.badge.plus") { openPrompts() }
-                Button("本机消息库", systemImage: "books.vertical") { showingLibrary = true }
-                Button("查找消息", systemImage: "magnifyingglass") { showingSearch = true }
-                    .disabled(model.selectedConversation?.messages.isEmpty != false)
-                Button("连接管理", systemImage: "slider.horizontal.3") { showingSettings = true }
-                Button("服务端", systemImage: "server.rack") { showingRemote = true }
+                Section {
+                    Button("提示词模板", systemImage: "text.badge.plus") { openPrompts() }
+                    Button("本机消息库", systemImage: "books.vertical") { showingLibrary = true }
+                    Button("连接管理", systemImage: "server.rack") { showingSettings = true }
+                }
             } label: {
                 Image(systemName: "ellipsis.circle")
                     .font(.system(size: 18))
-                    .frame(width: 42, height: 42)
+                    .frame(width: 42, height: 44)
             }
             .accessibilityLabel("消息查找与连接管理")
         }
-        .foregroundStyle(.white)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
+        .foregroundStyle(HermesTheme.ink)
+        .padding(.horizontal, 6)
+        .padding(.top, 4)
     }
 
     private var configurationBar: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button(action: openConfiguration) {
-                VStack(alignment: .leading, spacing: 7) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "slider.horizontal.3")
-                        Text(model.conversationConfiguration.model.isEmpty ? model.settings.model : model.conversationConfiguration.model).lineLimit(1)
-                        if !model.conversationConfiguration.systemPrompt.isEmpty { Image(systemName: "text.alignleft").accessibilityLabel("已设置系统提示词") }
-                        Spacer(minLength: 4)
-                        Text(model.conversationConfiguration.contextLabel).lineLimit(1)
-                        Image(systemName: "chevron.down").font(.caption2)
-                    }.foregroundStyle(HermesTheme.muted)
-                    if let project = model.currentProject {
-                        HStack(spacing: 6) {
-                            Label(project.name, systemImage: "folder").lineLimit(1)
-                            Spacer(minLength: 4)
-                            if !project.instructions.isEmpty { Text("项目指令生效").font(.caption2) }
-                        }.foregroundStyle(HermesTheme.accent).accessibilityIdentifier("chat-project-indicator")
-                    }
-                }.font(.caption).padding(.horizontal, 20).padding(.top, 10).padding(.bottom, 8)
-            }.buttonStyle(.plain).disabled(model.isSending || model.needsRecovery)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                Button(action: openConfiguration) {
+                    configurationChip(icon: "cpu",
+                                      text: model.conversationConfiguration.model.isEmpty ? model.settings.model : model.conversationConfiguration.model,
+                                      trailing: model.conversationConfiguration.systemPrompt.isEmpty ? nil : "text.alignleft")
+                }
+                .buttonStyle(.plain).disabled(model.isSending || model.needsRecovery)
                 .accessibilityLabel("对话设置，\(model.conversationConfiguration.contextLabel)")
-            referenceBar
+                Button(action: openConfiguration) {
+                    configurationChip(icon: "text.line.last.and.arrowtriangle.forward", text: model.conversationConfiguration.contextLabel)
+                }
+                .buttonStyle(.plain).disabled(model.isSending || model.needsRecovery)
+                referenceBar
+            }
+            .padding(.horizontal, 16).padding(.vertical, 8)
         }
     }
 
+    private func configurationChip(icon: String, text: String, trailing: String? = nil, tone: HermesTone = .neutral) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon).font(.caption2.weight(.semibold))
+            Text(text).lineLimit(1)
+            if let trailing { Image(systemName: trailing).font(.caption2) }
+        }
+        .font(.caption.weight(.medium))
+        .foregroundStyle(tone == .neutral ? HermesTheme.muted : tone.color)
+        .padding(.horizontal, 10).padding(.vertical, 6)
+        .background(tone == .neutral ? HermesTheme.raised : tone.color.opacity(0.13), in: Capsule())
+    }
+
     @ViewBuilder private var referenceBar: some View {
-        if let conversation = model.selectedConversation, model.currentProject != nil {
-            Button {
-                referenceSelection = ProjectReferenceSelectionTarget(conversationID: conversation.id, profileID: model.activeProfileID)
-            } label: {
-                HStack(spacing: 8) {
-                    Label("参考资料 \(model.currentReferenceDocuments.count)", systemImage: "doc.on.doc")
-                        .font(.caption.weight(.medium))
-                    Spacer(minLength: 6)
-                    Text(model.currentReferenceDocuments.isEmpty ? "选择随请求发送的资料" : "点按管理本对话引用")
-                        .font(.caption2).foregroundStyle(HermesTheme.muted).lineLimit(1)
-                    Image(systemName: "chevron.right").font(.caption2)
-                }.foregroundStyle(HermesTheme.accent).padding(.horizontal, 20).padding(.vertical, 9)
-            }.buttonStyle(.plain).background(HermesTheme.surface.opacity(0.55))
+        if let conversation = model.selectedConversation, let project = model.currentProject {
+            HStack(spacing: 8) {
+                configurationChip(icon: "folder.fill", text: project.name + (project.instructions.isEmpty ? "" : " · 指令生效"), tone: .accent)
+                    .accessibilityIdentifier("chat-project-indicator")
+                Button {
+                    referenceSelection = ProjectReferenceSelectionTarget(conversationID: conversation.id, profileID: model.activeProfileID)
+                } label: {
+                    configurationChip(icon: "doc.on.doc", text: model.currentReferenceDocuments.isEmpty ? "选择参考资料" : "参考资料 \(model.currentReferenceDocuments.count)",
+                                      tone: model.currentReferenceDocuments.isEmpty ? .neutral : .accent)
+                }
+                .buttonStyle(.plain)
                 .disabled(model.isSending || model.needsRecovery).accessibilityIdentifier("chat-reference-documents")
+            }
         } else if model.selectedConversation != nil {
             Button(action: openConfiguration) {
-                Label("分配项目后添加参考资料", systemImage: "folder.badge.plus")
-                    .font(.caption).foregroundStyle(HermesTheme.accent)
-                    .padding(.horizontal, 20).padding(.bottom, 9)
-            }.buttonStyle(.plain).disabled(model.isSending || model.needsRecovery)
-                .accessibilityIdentifier("chat-reference-assign-project")
-        } else {
-            Text("创建项目对话后，可选择参考资料")
-                .font(.caption2).foregroundStyle(HermesTheme.muted)
-                .padding(.horizontal, 20).padding(.bottom, 9)
+                configurationChip(icon: "folder.badge.plus", text: "分配项目后添加参考资料")
+            }
+            .buttonStyle(.plain).disabled(model.isSending || model.needsRecovery)
+            .accessibilityIdentifier("chat-reference-assign-project")
         }
     }
 
@@ -402,174 +392,137 @@ struct ChatView: View {
         }
     }
 
+    private var connectionTone: HermesTone {
+        switch model.connectionState {
+        case .unconfigured: .warning
+        case .checking: .info
+        case .connected: .success
+        case .offline: .danger
+        }
+    }
+
     private var welcome: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 60)
-            ZStack {
-                Circle()
-                    .fill(HermesTheme.accent.opacity(0.08))
-                    .frame(width: 160, height: 160)
-                Circle()
-                    .stroke(HermesTheme.accent.opacity(0.25), lineWidth: 1)
-                    .frame(width: 126, height: 126)
-                Image(systemName: "circle.hexagongrid.fill")
-                    .font(.system(size: 58, weight: .ultraLight))
-                    .foregroundStyle(HermesTheme.accent)
-            }
-            Text("你的 Hermes，随身同行")
-                .font(.system(size: 25, weight: .semibold, design: .rounded))
-                .padding(.top, 28)
+            HermesMark(size: 64)
+                .shadow(color: HermesTheme.accent.opacity(0.35), radius: 24, y: 8)
+            Text("今天想让 Hermes 做什么？")
+                .font(.title2.weight(.bold))
+                .foregroundStyle(HermesTheme.ink)
+                .padding(.top, 24)
             Text(model.settings.isConfigured
-                 ? "开始一段对话，继续你的工作。"
+                 ? "本机对话保存在这台设备上，发送前可预览上下文。"
                  : "先连接你的 Hermes Agent，然后开始对话。")
-                .font(.system(size: 14))
+                .font(.subheadline)
                 .foregroundStyle(HermesTheme.muted)
-                .padding(.top, 10)
+                .multilineTextAlignment(.center)
+                .padding(.top, 8)
 
             if !model.settings.isConfigured {
                 Button { showingSettings = true } label: {
                     Label("连接 Hermes", systemImage: "link")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(HermesTheme.background)
-                        .padding(.horizontal, 22)
-                        .padding(.vertical, 13)
-                        .background(HermesTheme.accent, in: Capsule())
                 }
-                .padding(.top, 32)
+                .buttonStyle(HermesPrimaryButtonStyle(fullWidth: false))
+                .padding(.top, 28)
             } else {
                 VStack(spacing: 10) {
-                    suggestion("帮我总结今天的工作")
-                    suggestion("看看现在有什么需要处理")
+                    suggestion("帮我总结今天的工作", icon: "text.badge.checkmark")
+                    suggestion("看看现在有什么需要处理", icon: "tray.full")
+                    suggestion("把这周的计划拆成待办", icon: "checklist")
                 }
-                .padding(.top, 34)
+                .padding(.top, 28)
             }
             Spacer(minLength: 60)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 24)
-        .foregroundStyle(.white)
     }
 
-    private func suggestion(_ text: String) -> some View {
+    private func suggestion(_ text: String, icon: String) -> some View {
         Button {
             model.draft = text
         } label: {
-            HStack {
-                Image(systemName: "sparkle")
-                    .foregroundStyle(HermesTheme.accent)
-                Text(text)
+            HStack(spacing: 12) {
+                Image(systemName: icon).foregroundStyle(HermesTheme.accent).frame(width: 20)
+                Text(text).foregroundStyle(HermesTheme.ink)
                 Spacer()
-                Image(systemName: "arrow.up.left")
-                    .font(.system(size: 11))
-                    .foregroundStyle(HermesTheme.muted)
+                Image(systemName: "arrow.up.left").font(.caption2.weight(.bold)).foregroundStyle(HermesTheme.muted)
             }
-            .font(.system(size: 13))
-            .padding(15)
-            .background(HermesTheme.surface, in: RoundedRectangle(cornerRadius: 14))
+            .font(.subheadline)
+            .hermesCard(padding: 14, radius: 14)
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: 350)
+        .frame(maxWidth: 380)
     }
 
     private var thinkingIndicator: some View {
-        HStack(spacing: 10) {
-            ProgressView().tint(HermesTheme.accent)
-            Text(model.toolStatus ?? (model.streamedReply.isEmpty
-                                      ? "Hermes 正在思考…" : "正在生成回复…"))
-                .font(.system(size: 13))
-                .foregroundStyle(HermesTheme.muted)
-                .lineLimit(1)
-            Spacer()
-            Button("停止") { model.cancelSend() }
-                .font(.system(size: 13))
-                .foregroundStyle(HermesTheme.accent)
+        RunStatusBar(text: model.toolStatus ?? (model.streamedReply.isEmpty ? "Hermes 正在思考…" : "正在生成回复…")) {
+            model.cancelSend()
         }
-        .padding(.horizontal, 14)
     }
 
     private var composer: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 20) {
-                Button("提示词模板", systemImage: "text.badge.plus") { openPrompts() }
-                Button("上下文预览", systemImage: "eye") {
-                    performLocalAction {
-                        contextPreview = try model.previewNextRequest(model.draft, hasImage: pendingImage != nil, expectedDraftKey: model.draftKey)
-                    }
-                }.disabled(model.isSending || loadingPhoto || model.needsRecovery ||
-                    (model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && pendingImage == nil))
-                .accessibilityIdentifier("preview-chat-context")
-            }.font(.caption.weight(.medium)).foregroundStyle(HermesTheme.accent)
+        VStack(alignment: .leading, spacing: 8) {
             if let composerNotice {
-                HStack {
-                    Text(composerNotice).font(.caption).foregroundStyle(HermesTheme.accent)
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill").foregroundStyle(HermesTheme.accent)
+                    Text(composerNotice).font(.caption).foregroundStyle(HermesTheme.ink)
                     Spacer()
-                    Button { self.composerNotice = nil } label: { Image(systemName: "xmark") }
+                    Button { self.composerNotice = nil } label: { Image(systemName: "xmark").font(.caption2.weight(.bold)) }
+                        .foregroundStyle(HermesTheme.muted)
                         .accessibilityLabel("关闭草稿提示")
                 }
+                .padding(.horizontal, 6)
             }
-            if let pendingImage, let preview = UIImage(data: pendingImage) {
-                ZStack(alignment: .topTrailing) {
-                    Image(uiImage: preview)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 110, maxHeight: 110)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    Button {
-                        self.pendingImage = nil
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 23))
-                            .foregroundStyle(.white, .black.opacity(0.7))
-                    }
-                    .accessibilityLabel("移除图片")
+            VStack(alignment: .leading, spacing: 4) {
+                if let pendingImage, let preview = UIImage(data: pendingImage) {
+                    PendingImageThumbnail(image: preview) { self.pendingImage = nil }
                 }
-            }
-            HStack(alignment: .bottom, spacing: 10) {
-                PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                    Group {
-                        if loadingPhoto { ProgressView().tint(HermesTheme.accent) }
-                        else { Image(systemName: "photo.badge.plus") }
-                    }
-                    .font(.system(size: 21))
-                    .foregroundStyle(HermesTheme.accent)
-                    .frame(width: 38, height: 44)
-                }
-                .disabled(model.isSending || loadingPhoto)
-                .accessibilityLabel("添加图片")
-
                 TextField("给 Hermes 发送消息…", text: $model.draft, axis: .vertical)
-                    .lineLimit(1...5)
-                    .font(.system(size: 15))
+                    .lineLimit(1...6)
+                    .font(.body)
                     .tint(HermesTheme.accent)
-                    .padding(.horizontal, 15)
-                    .padding(.vertical, 13)
-                    .background(HermesTheme.raised, in: RoundedRectangle(cornerRadius: 20))
+                    .padding(.horizontal, 4).padding(.vertical, 6)
                     .accessibilityLabel("消息内容")
-
-                Button {
-                    if model.settings.isConfigured {
-                        if model.send(model.draft, imageData: pendingImage) {
-                            composerNotice = nil
-                            pendingImage = nil
-                        }
-                    } else {
-                        showingSettings = true
+                HStack(spacing: 2) {
+                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        ComposerIconLabel(systemName: "photo", loading: loadingPhoto)
                     }
-                } label: {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(HermesTheme.background)
-                        .frame(width: 44, height: 44)
-                        .background(HermesTheme.accent, in: Circle())
+                    .disabled(model.isSending || loadingPhoto)
+                    .accessibilityLabel("添加图片")
+                    Button { openPrompts() } label: { ComposerIconLabel(systemName: "text.badge.plus") }
+                        .accessibilityLabel("提示词模板")
+                    Button {
+                        performLocalAction {
+                            contextPreview = try model.previewNextRequest(model.draft, hasImage: pendingImage != nil, expectedDraftKey: model.draftKey)
+                        }
+                    } label: { ComposerIconLabel(systemName: "eye") }
+                    .disabled(model.isSending || loadingPhoto || model.needsRecovery ||
+                        (model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && pendingImage == nil))
+                    .accessibilityLabel("上下文预览")
+                    .accessibilityIdentifier("preview-chat-context")
+                    Spacer()
+                    if model.isSending {
+                        StopButton { model.cancelSend() }
+                    } else {
+                        SendButton(enabled: canSend) {
+                            if model.settings.isConfigured {
+                                if model.send(model.draft, imageData: pendingImage) {
+                                    composerNotice = nil
+                                    pendingImage = nil
+                                }
+                            } else {
+                                showingSettings = true
+                            }
+                        }
+                    }
                 }
-                .disabled(!canSend)
-                .opacity(canSend ? 1 : 0.45)
-                .accessibilityLabel("发送")
             }
+            .composerContainer()
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 10)
+        .padding(.horizontal, 12)
+        .padding(.top, 6)
+        .padding(.bottom, 8)
         .background(HermesTheme.background)
     }
 
@@ -587,46 +540,17 @@ private struct MessageBubble: View {
     var captureDisabled = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            if message.role == .user { Spacer(minLength: 42) }
-            if message.role == .assistant {
-                Image(systemName: "circle.hexagongrid.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(HermesTheme.accent)
-                    .frame(width: 28, height: 28)
+        ChatMessageRow(role: message.role == .user ? .user : .assistant, text: message.content,
+                       image: message.imageID.flatMap { ImageAttachmentStore.image($0, directory: attachmentDirectory) },
+                       highlighted: highlighted, bookmarked: message.bookmark != nil) {
+            if let captureAction, !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Button(action: captureAction) {
+                    Label("存为项目资料", systemImage: "doc.badge.plus")
+                }
+                .buttonStyle(HermesPillButtonStyle(tone: .accent))
+                .disabled(captureDisabled)
+                .accessibilityIdentifier("capture-message-\(message.id)")
             }
-            VStack(alignment: .leading, spacing: 10) {
-                if highlighted { Label("定位消息", systemImage: "magnifyingglass").font(.caption).foregroundStyle(HermesTheme.accent) }
-                if message.bookmark != nil { Label("已收藏", systemImage: "bookmark.fill").font(.caption).foregroundStyle(HermesTheme.accent) }
-                if let imageID = message.imageID,
-                   let image = ImageAttachmentStore.image(imageID, directory: attachmentDirectory) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: 240, maxHeight: 280)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                if !message.content.isEmpty {
-                    MessageContentView(text: message.content, rendersMarkdown: message.role == .assistant)
-                }
-                if let captureAction, !message.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Button(action: captureAction) {
-                        Label("存为项目资料", systemImage: "doc.badge.plus")
-                            .font(.caption).foregroundStyle(HermesTheme.accent).frame(minHeight: 44)
-                    }.buttonStyle(.plain).disabled(captureDisabled)
-                        .accessibilityIdentifier("capture-message-\(message.id)")
-                }
-            }
-            .padding(.horizontal, 15)
-            .padding(.vertical, 12)
-            .background(
-                message.role == .user ? HermesTheme.raised : HermesTheme.surface,
-                in: RoundedRectangle(cornerRadius: 18)
-            )
-            .overlay(RoundedRectangle(cornerRadius: 18).stroke(highlighted ? HermesTheme.accent : .clear, lineWidth: 1))
-            if message.role == .assistant { Spacer(minLength: 24) }
         }
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity)
     }
 }

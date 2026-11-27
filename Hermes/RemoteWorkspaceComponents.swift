@@ -1,24 +1,5 @@
 import SwiftUI
 
-struct RemoteSearchField: View {
-    @Binding var text: String
-    let prompt: String
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundStyle(HermesTheme.muted)
-            TextField(prompt, text: $text)
-                .font(.subheadline).textInputAutocapitalization(.never).autocorrectionDisabled()
-                .submitLabel(.search)
-            if !text.isEmpty {
-                Button { text = "" } label: { Image(systemName: "xmark.circle.fill") }
-                    .foregroundStyle(HermesTheme.muted).accessibilityLabel("清空搜索")
-            }
-        }
-        .padding(12).background(HermesTheme.surface).clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
 struct RemoteLoadBanner: View {
     let message: String
     let hasRecords: Bool
@@ -28,21 +9,28 @@ struct RemoteLoadBanner: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(hasRecords ? "刷新失败，保留上次记录" : "读取失败", systemImage: "wifi.exclamationmark")
-                .font(.subheadline.weight(.semibold)).foregroundStyle(.orange)
+                .font(.subheadline.weight(.semibold)).foregroundStyle(HermesTheme.warning)
             Text(message).font(.caption).textSelection(.enabled)
             Button("重试", action: retry).disabled(disabled).buttonStyle(.borderless)
         }
-        .padding(.vertical, 6).listRowBackground(HermesTheme.surface)
+        .hermesCard(padding: 14)
     }
 }
 
 struct RemoteJobStatusBadge: View {
     let job: RemoteJob
     var body: some View {
-        Text(job.statusLabel).font(.caption.weight(.medium))
-            .foregroundStyle(job.needsAttention ? Color.orange : job.isPaused ? HermesTheme.muted : HermesTheme.accent)
-            .padding(.horizontal, 8).padding(.vertical, 4)
-            .background((job.needsAttention ? Color.orange : HermesTheme.accent).opacity(0.12))
-            .clipShape(Capsule())
+        StatusBadge(text: job.statusLabel,
+                    tone: job.needsAttention ? .warning : job.isPaused ? .neutral : RemoteJobFilter.running.includes(job) ? .info : .accent)
+    }
+}
+
+extension View {
+    func remoteActionErrorAlert(_ workspace: RemoteWorkspaceModel) -> some View {
+        alert("服务端操作失败", isPresented: Binding(
+            get: { workspace.actionError != nil }, set: { if !$0 { workspace.actionError = nil } }
+        )) {
+            Button("知道了", role: .cancel) { workspace.actionError = nil }
+        } message: { Text(workspace.actionError ?? "") }
     }
 }

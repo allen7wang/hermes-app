@@ -49,13 +49,13 @@ struct ProjectReferenceRemovalView: View {
                             Text("整理引用，保留资料。").font(.title2.bold())
                             Text("选择需要解除引用的资料，再明确选择目标对话。检查移除后的顺序与编号，确认后统一保存。")
                                 .font(.subheadline).foregroundStyle(HermesTheme.muted)
-                            if unavailable { Text("请先停止回复或等待完成后再整理引用。").font(.caption).foregroundStyle(.orange) }
-                            if let message { Label(message, systemImage: "checkmark.circle").foregroundStyle(.green).font(.subheadline) }
+                            if unavailable { Text("请先停止回复或等待完成后再整理引用。").font(.caption).foregroundStyle(HermesTheme.warning) }
+                            if let message { Label(message, systemImage: "checkmark.circle").foregroundStyle(HermesTheme.success).font(.subheadline) }
                         }.listRowBackground(HermesTheme.surface)
                         documentSections
                         conversationSections
                         Section {
-                            if let planIssue { Text(planIssue).font(.subheadline).foregroundStyle(.orange) }
+                            if let planIssue { Text(planIssue).font(.subheadline).foregroundStyle(HermesTheme.warning) }
                             Button("检查移除前后方案", systemImage: "list.bullet.rectangle") {
                                 do { review = try makeReview() } catch { self.error = error.localizedDescription }
                             }.disabled(unavailable || documentIDs.isEmpty || selection.isEmpty || planIssue != nil)
@@ -83,7 +83,7 @@ struct ProjectReferenceRemovalView: View {
             .onChange(of: records.map(\.id)) { _, ids in selection.formIntersection(ids) }
             .onChange(of: documents.map(\.id)) { _, ids in documentIDs.removeAll { !ids.contains($0) } }
             .onChange(of: model.activeProfileID) { _, _ in selection = []; documentIDs = []; message = nil }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 
     private var documentSections: some View {
@@ -106,7 +106,7 @@ struct ProjectReferenceRemovalView: View {
                         HStack(alignment: .top, spacing: 12) {
                             Image(systemName: documentIDs.contains(document.id) ? "checkmark.circle.fill" : "circle").foregroundStyle(HermesTheme.accent)
                             VStack(alignment: .leading, spacing: 5) {
-                                Text(document.title).font(.subheadline).foregroundStyle(.white)
+                                Text(document.title).font(.subheadline).foregroundStyle(HermesTheme.ink)
                                 Text("\(document.body.count.formatted()) 正文字符").font(.caption).foregroundStyle(HermesTheme.muted)
                             }
                         }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
@@ -125,7 +125,7 @@ struct ProjectReferenceRemovalView: View {
                 Text("已选 \(selection.count) / \(records.count) 段对话").font(.headline)
                     .accessibilityIdentifier("knowledge-removal-count")
                 let hidden = selection.subtracting(visible.map(\.id)).count
-                if hidden > 0 { Text("另有 \(hidden) 段已选对话被搜索隐藏，仍纳入本次检查。").font(.caption).foregroundStyle(.orange) }
+                if hidden > 0 { Text("另有 \(hidden) 段已选对话被搜索隐藏，仍纳入本次检查。").font(.caption).foregroundStyle(HermesTheme.warning) }
                 HStack {
                     Button("选择当前结果") { selection.formUnion(visible.map(\.id)); message = nil }
                         .disabled(unavailable || visible.isEmpty).accessibilityIdentifier("knowledge-removal-select-visible")
@@ -149,7 +149,7 @@ struct ProjectReferenceRemovalView: View {
                                 HStack(alignment: .top, spacing: 12) {
                                     Image(systemName: selection.contains(conversation.id) ? "checkmark.circle.fill" : "circle").foregroundStyle(HermesTheme.accent)
                                     VStack(alignment: .leading, spacing: 6) {
-                                        Text(conversation.title).font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                                        Text(conversation.title).font(.subheadline.weight(.semibold)).foregroundStyle(HermesTheme.ink)
                                         let count = documentIDs.filter { (conversation.referenceDocumentIDs ?? []).contains($0) }.count
                                         Text("当前 \((conversation.referenceDocumentIDs ?? []).count) 篇" + (documentIDs.isEmpty ? "" : count == 0 ? " · 未引用所选资料，无需改动" : " · 将移除 \(count) 篇"))
                                             .font(.caption).foregroundStyle(HermesTheme.muted)
@@ -194,7 +194,7 @@ struct ProjectReferenceRemovalReviewView: View {
                     Text("为 \(review.changedCount) 段对话移除引用").font(.title2.bold())
                     Text("明确选中 \(review.rows.count) 段，其中 \(review.rows.count - review.changedCount) 段未引用所选资料、无需改动。保留其余资料的相对顺序，移除后按新顺序重新编号。")
                         .font(.subheadline).foregroundStyle(HermesTheme.muted)
-                    if let changeMessage { Label(changeMessage, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(.orange) }
+                    if let changeMessage { Label(changeMessage, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(HermesTheme.warning) }
                 }.listRowBackground(HermesTheme.surface)
                 Section("将从所选对话解除引用的资料") {
                     ForEach(Array(review.removingDocuments.enumerated()), id: \.element.id) { index, document in
@@ -240,7 +240,7 @@ struct ProjectReferenceRemovalReviewView: View {
                 .alert("资料引用移除失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                     Button("知道了", role: .cancel) { error = nil }
                 } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
     private func selectionList(_ ids: [UUID], title: String) -> some View {
         VStack(alignment: .leading, spacing: 7) {

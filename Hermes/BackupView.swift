@@ -95,7 +95,7 @@ struct BackupView: View {
             if let feedback {
                 Section {
                     Label(feedback, systemImage: failed ? "exclamationmark.circle" : "checkmark.circle.fill")
-                        .font(.subheadline).foregroundStyle(failed ? Color.orange : Color.green)
+                        .font(.subheadline).foregroundStyle(failed ? HermesTheme.warning : HermesTheme.success)
                 }
                 .listRowBackground(HermesTheme.surface)
             }

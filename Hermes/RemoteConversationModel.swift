@@ -2,6 +2,11 @@ import Foundation
 
 @MainActor
 final class RemoteConversationModel: ObservableObject {
+    private struct ApprovalCleanupError: LocalizedError {
+        let underlying: Error
+        var errorDescription: String? { "审批已提交，但收件箱清理失败：\(underlying.localizedDescription)" }
+    }
+
     private struct ActiveKey: Hashable {
         let profileID: UUID?
         let serverURL: String
@@ -18,6 +23,16 @@ final class RemoteConversationModel: ObservableObject {
 
     static func hasActiveRun(profileID: UUID) -> Bool {
         activeModels.keys.contains { $0.profileID == profileID }
+    }
+
+    /// 收件箱提交审批时优先交给仍在运行的会话，会话页的审批卡和进度会一起更新。
+    static func activeApproval(id: String, client: HermesClient, sessionID: String) -> (RemoteConversationModel, RemoteApproval)? {
+        guard let root = try? client.rootURL else { return nil }
+        for (key, model) in activeModels where key.profileID == client.settings.profileID && key.sessionID == sessionID {
+            guard (try? model.client.rootURL) == root else { continue }
+            if let approval = model.approvals.first(where: { $0.id == id }) { return (model, approval) }
+        }
+        return nil
     }
 
     @Published private(set) var session: RemoteSession
@@ -231,17 +246,18 @@ final class RemoteConversationModel: ObservableObject {
         return true
     }
 
-    func resolve(_ approval: RemoteApproval, choice: String) async {
-        guard !approvalBusy, approvals.contains(where: { $0.id == approval.id }) else { return }
+    func resolve(_ approval: RemoteApproval, choice: String) async throws {
+        guard !approvalBusy, !isStopping, approvals.contains(where: { $0.id == approval.id }) else { return }
         approvalBusy = true
         defer { approvalBusy = false }
+        try await client.resolveApproval(approval, choice: choice)
+        approvals.removeAll { $0.id == approval.id }
+        if isSending, approvals.isEmpty { progress = approvalProgress(for: choice) }
         do {
-            try await client.resolveApproval(approval, choice: choice)
-            do { try InboxStore.remove(id: approval.id, profileID: client.settings.profileID) }
-            catch { errorMessage = "审批已提交，但收件箱清理失败：\(error.localizedDescription)" }
-            approvals.removeAll { $0.id == approval.id }
-            progress = approvalProgress(for: choice)
-        } catch { errorMessage = error.localizedDescription }
+            try InboxStore.remove(id: approval.id, profileID: client.settings.profileID)
+        } catch {
+            throw ApprovalCleanupError(underlying: error)
+        }
     }
 
     func rename(to rawTitle: String) async -> Bool {

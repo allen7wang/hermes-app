@@ -84,11 +84,72 @@ final class InboxStoreTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: url), corrupt)
     }
 
+    @MainActor
+    func testInboxKeepsFailedApprovalAndIgnoresStaleTapAfterSuccess() async throws {
+        let pending = item(id: "pending", title: "审批", createdAt: Date())
+        try InboxStore.upsert(pending)
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [InboxApprovalProtocol.self]
+        let client = HermesClient(
+            settings: ConnectionSettings(serverURL: "https://inbox.hermes.test", model: "hermes-agent",
+                                         apiKey: "fixture", profileID: profileID),
+            sessionConfiguration: configuration
+        )
+        let inbox = InboxController(client: client)
+
+        await inbox.resolve(pending, choice: "deny")
+        XCTAssertNotNil(inbox.errorText)
+        XCTAssertEqual(inbox.approvals, [pending])
+        XCTAssertEqual(try InboxStore.items(profileID: profileID), [pending])
+
+        inbox.errorText = nil
+        await inbox.resolve(pending, choice: "session")
+        XCTAssertTrue(inbox.approvals.isEmpty)
+        XCTAssertTrue(try InboxStore.items(profileID: profileID).isEmpty)
+
+        await inbox.resolve(pending, choice: "deny")
+        XCTAssertNil(inbox.errorText)
+    }
+
     private func item(id: String, title: String, createdAt: Date) -> InboxItem {
         InboxItem(id: id, profileID: profileID, sessionID: "session-\(id)", sessionTitle: "会话",
             runID: "run-\(id)", requestID: "request-\(id)", command: "cat ~/notes.txt",
             choices: ["session", "deny"],
             kind: .approval, title: title,
             detail: "详情", createdAt: createdAt)
+    }
+}
+
+private final class InboxApprovalProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        guard let url = request.url else { return }
+        let body = try? JSONDecoder().decode([String: String].self, from: bodyData())
+        let sessionAllowed = request.httpMethod == "POST" && url.path == "/v1/runs/run-pending/approval"
+            && body?["request_id"] == "request-pending" && body?["choice"] == "session"
+        let response = HTTPURLResponse(url: url, statusCode: sessionAllowed ? 200 : 503, httpVersion: nil,
+                                       headerFields: ["Content-Type": "application/json"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data((sessionAllowed ? #"{"resolved":1}"# : #"{"error":"retry"}"#).utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
+
+    private func bodyData() -> Data {
+        if let body = request.httpBody { return body }
+        guard let stream = request.httpBodyStream else { return Data() }
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 1024)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            guard count > 0 else { break }
+            data.append(contentsOf: buffer.prefix(count))
+        }
+        return data
     }
 }

@@ -91,7 +91,7 @@ struct MessageLibraryView: View {
                             }
                             let visibleIDs = Set(results.map(\.id))
                             let hidden = selection.subtracting(visibleIDs).count
-                            if hidden > 0 { Text("其中 \(hidden) 条被搜索或筛选隐藏，仍会纳入操作。").font(.caption).foregroundStyle(.orange) }
+                            if hidden > 0 { Text("其中 \(hidden) 条被搜索或筛选隐藏，仍会纳入操作。").font(.caption).foregroundStyle(HermesTheme.warning) }
                             Button(!visibleIDs.isEmpty && visibleIDs.isSubset(of: selection) ? "取消选择当前结果" : "选择当前结果") {
                                 selectVisible()
                             }.font(.subheadline).disabled(searching || results.isEmpty || model.needsRecovery)
@@ -100,8 +100,8 @@ struct MessageLibraryView: View {
                                 .font(.caption2).foregroundStyle(HermesTheme.muted)
                         }.foregroundStyle(HermesTheme.accent).accessibilityIdentifier("library-batch-selection")
                     }
-                    if model.needsRecovery { Text("本机数据需要恢复，批量整理暂不可用。").font(.caption).foregroundStyle(.orange) }
-                    if let batchNotice { Label(batchNotice, systemImage: "checkmark.circle").font(.caption).foregroundStyle(.green) }
+                    if model.needsRecovery { Text("本机数据需要恢复，批量整理暂不可用。").font(.caption).foregroundStyle(HermesTheme.warning) }
+                    if let batchNotice { Label(batchNotice, systemImage: "checkmark.circle").font(.caption).foregroundStyle(HermesTheme.success) }
                 }.padding(16)
                 if results.isEmpty {
                     if searching { ProgressView("正在查找…").frame(maxHeight: .infinity) }
@@ -230,7 +230,7 @@ struct MessageLibraryView: View {
         .alert("消息批量操作暂不可用", isPresented: Binding(get: { batchError != nil }, set: { if !$0 { batchError = nil } })) {
             Button("知道了", role: .cancel) { batchError = nil }
         } message: { Text(batchError ?? "") }
-        .tint(HermesTheme.accent).preferredColorScheme(.dark)
+        .tint(HermesTheme.accent)
         .onChange(of: availableTags) { _, values in if let tag, !values.contains(tag) { self.tag = nil } }
         .onChange(of: model.activeProfileID) { _, _ in
             query = ""; scope = .all; role = .all; tag = nil; project = .all
@@ -327,7 +327,7 @@ private struct MessageLibraryRow: View {
                 Text((item.conversationArchived ? "已归档 · " : "") + item.conversationTags.map { "#" + $0 }.joined(separator: " "))
                     .font(.caption).foregroundStyle(HermesTheme.accent).lineLimit(1)
             }
-        }.foregroundStyle(.white).padding(.vertical, 8)
+        }.foregroundStyle(HermesTheme.ink).padding(.vertical, 8)
     }
 }
 
@@ -424,7 +424,7 @@ private struct MessageLibraryDetailView: View {
                 ContentUnavailableView("原消息已不可用", systemImage: "text.bubble", description: Text("消息可能已删除，或当前连接已变更。"))
             }
         }
-        .background(HermesTheme.background).foregroundStyle(.white)
+        .background(HermesTheme.background).foregroundStyle(HermesTheme.ink)
         .navigationTitle("消息详情").navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $editingNote) {
             BookmarkNoteView(target: target, note: item?.message.bookmark?.note ?? "")

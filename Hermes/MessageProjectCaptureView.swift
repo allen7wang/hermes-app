@@ -20,7 +20,7 @@ struct MessageProjectCapturePickerView: View {
                         .font(.subheadline).foregroundStyle(HermesTheme.muted)
                     if !available {
                         Text(model.isSending ? "请等待当前回复结束后再选择项目。" : "当前连接或存储状态已变化，请返回重新选择。")
-                            .font(.subheadline).foregroundStyle(.orange)
+                            .font(.subheadline).foregroundStyle(HermesTheme.warning)
                     }
                 }.listRowBackground(HermesTheme.surface)
                 Section("选择目标项目 · 初始不选中任何项目") {
@@ -41,7 +41,7 @@ struct MessageProjectCapturePickerView: View {
                                     Text("\(count) / 20 篇 · \(characters.formatted()) / 200,000 正文字符")
                                         .font(.caption).foregroundStyle(HermesTheme.muted)
                                     if count >= ProjectDocument.collectionLimit || characters >= ProjectDocument.projectCharacterLimit {
-                                        Text("资料库已满，请先整理空间。").font(.caption).foregroundStyle(.orange)
+                                        Text("资料库已满，请先整理空间。").font(.caption).foregroundStyle(HermesTheme.warning)
                                     }
                                 }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 4)
                             }.disabled(!available || count >= ProjectDocument.collectionLimit || characters >= ProjectDocument.projectCharacterLimit)
@@ -63,7 +63,7 @@ struct MessageProjectCapturePickerView: View {
             .alert("暂时无法采集", isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } })) {
                 Button("知道了", role: .cancel) { failure = nil }
             } message: { Text(failure ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
 }
 
@@ -116,7 +116,7 @@ struct MessageProjectCaptureEditorView: View {
             targetSection
             if let savedID {
                 Section {
-                    Label("已新增一篇独立资料", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                    Label("已新增一篇独立资料", systemImage: "checkmark.circle.fill").foregroundStyle(HermesTheme.success)
                     Text("原消息、草稿与已有资料引用保留。新资料尚未用于聊天，请按需在对话中明确选择参考资料。")
                         .font(.subheadline).foregroundStyle(HermesTheme.muted)
                     NavigationLink("查看新资料") {
@@ -170,7 +170,7 @@ struct MessageProjectCaptureEditorView: View {
         .alert("资料未保存", isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } })) {
             Button("知道了", role: .cancel) { failure = nil }
         } message: { Text(failure ?? "") }
-        .tint(HermesTheme.accent).preferredColorScheme(.dark)
+        .tint(HermesTheme.accent)
     }
 
     private var targetSection: some View {
@@ -183,7 +183,7 @@ struct MessageProjectCaptureEditorView: View {
             Text("检查时已有 \(capture.project.documents.count) / 20 篇、\(characters.formatted()) / 200,000 正文字符")
                 .font(.caption).foregroundStyle(HermesTheme.muted)
             if savedID == nil, let changeMessage {
-                Label(changeMessage, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(.orange)
+                Label(changeMessage, systemImage: "exclamationmark.triangle").font(.subheadline).foregroundStyle(HermesTheme.warning)
                     .accessibilityIdentifier("message-capture-changed")
                 Button("重新检查目标项目，保留编辑输入") {
                     do { capture = try model.prepareMessageProjectCapture(source: capture.source, projectID: capture.project.id) }
@@ -198,7 +198,7 @@ struct MessageProjectCaptureEditorView: View {
     private var inputSection: some View {
         Section {
             if !loaded && buildError == nil { HStack { ProgressView(); Text("正在准备完整汇编…") } }
-            if let buildError { Text(buildError).foregroundStyle(.orange).font(.subheadline) }
+            if let buildError { Text(buildError).foregroundStyle(HermesTheme.warning).font(.subheadline) }
             TextField("资料标题", text: $title, axis: .vertical).lineLimit(1...3)
                 .focused($focusedField, equals: .title)
                 .accessibilityIdentifier("message-capture-title").disabled(!loaded)
@@ -215,7 +215,7 @@ struct MessageProjectCaptureEditorView: View {
                         .font(.caption).foregroundStyle(HermesTheme.accent)
                 case .failure(let error):
                     Text(error.localizedDescription + " 完整预填仍保留，请手动精简；不会自动截断或拆分。")
-                        .font(.caption).foregroundStyle(.orange)
+                        .font(.caption).foregroundStyle(HermesTheme.warning)
                 }
             }
         } header: {

@@ -180,9 +180,6 @@ final class ProjectDocumentBatchTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(950)); controller.view.layoutIfNeeded()
         let image = UIGraphicsImageRenderer(size: size).image { _ in controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true) }
         let data = try XCTUnwrap(image.pngData()); XCTAssertGreaterThan(data.count, 1000)
-        let directory = URL(fileURLWithPath: "/private/tmp/hermes-v3-2-previews")
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try data.write(to: directory.appendingPathComponent(name + ".png"), options: .atomic)
         let attachment = XCTAttachment(image: image); attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
 }

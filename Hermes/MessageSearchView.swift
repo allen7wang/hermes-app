@@ -28,7 +28,7 @@ struct MessageSearchView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(hit.entry.label).font(.caption.weight(.semibold)).foregroundStyle(HermesTheme.accent)
                                 (Text(hit.before) + Text(hit.match).bold().foregroundColor(HermesTheme.accent) + Text(hit.after))
-                                    .font(.system(size: 15)).foregroundStyle(.white).lineLimit(4)
+                                    .font(.system(size: 15)).foregroundStyle(HermesTheme.ink).lineLimit(4)
                             }.padding(.vertical, 8)
                         }
                         .accessibilityIdentifier("search-hit-\(hit.id)")
@@ -42,6 +42,6 @@ struct MessageSearchView: View {
             .navigationTitle("查找消息").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("关闭") { dismiss() } } }
         }
-        .tint(HermesTheme.accent).preferredColorScheme(.dark)
+        .tint(HermesTheme.accent)
     }
 }

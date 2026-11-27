@@ -47,9 +47,9 @@ private struct CodeBlockView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(copied ? "代码已复制" : "复制代码块")
             }
-            .font(.caption.weight(.medium)).foregroundStyle(HermesTheme.accent)
+            .font(.caption.weight(.medium)).foregroundStyle(Color(hex: 0xB4ADFF))
             .padding(.horizontal, 12)
-            Divider().overlay(HermesTheme.muted.opacity(0.2))
+            .background(HermesTheme.codeHeader)
             ScrollView(.horizontal) {
                 Group {
                     if let highlighted = CodeHighlighter.highlighted(code: code, language: language) {
@@ -59,13 +59,16 @@ private struct CodeBlockView: View {
                     }
                 }
                 .font(.system(size: 13, design: .monospaced))
+                .foregroundStyle(HermesTheme.codeText)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: true, vertical: false)
                 .padding(12)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(HermesTheme.background, in: RoundedRectangle(cornerRadius: 10))
+        .background(HermesTheme.codeBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .environment(\.colorScheme, .dark)
         .onChange(of: code) { _, _ in copied = false }
     }
 }

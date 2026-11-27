@@ -32,7 +32,7 @@ private struct DocumentReferenceRow: View {
     let documents: [ProjectDocument]
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(reference.title).font(.subheadline.weight(.semibold)).foregroundStyle(.white).lineLimit(3)
+            Text(reference.title).font(.subheadline.weight(.semibold)).foregroundStyle(HermesTheme.ink).lineLimit(3)
             Text(reference.slots.map { slot in
                 "[资料\(slot.number)] " + (documents.first { $0.id == slot.documentID }?.title ?? "资料已改变")
             }.joined(separator: "\n"))
@@ -95,7 +95,7 @@ struct ProjectDocumentUsageView: View {
             }
         }.background(HermesTheme.background)
             .navigationTitle("资料引用情况").navigationBarTitleDisplayMode(.inline)
-            .tint(HermesTheme.accent).preferredColorScheme(.dark)
+            .tint(HermesTheme.accent)
     }
 }
 
@@ -122,7 +122,7 @@ struct ProjectReferenceConversationView: View {
                         Text("检查原消息及当前已保存的资料选择。查看不会切换聊天、恢复回收站记录或改动草稿。")
                             .font(.subheadline).foregroundStyle(HermesTheme.muted)
                         if selected.allSatisfy({ !inspectedDocumentIDs.contains($0.id) }) {
-                            Text("当前已不再引用检查中的资料。").font(.subheadline).foregroundStyle(.orange)
+                            Text("当前已不再引用检查中的资料。").font(.subheadline).foregroundStyle(HermesTheme.warning)
                         }
                     }.listRowBackground(HermesTheme.surface)
                     Section {
@@ -149,7 +149,7 @@ struct ProjectReferenceConversationView: View {
             }
         }.background(HermesTheme.background)
             .navigationTitle("引用对话检查").navigationBarTitleDisplayMode(.inline)
-            .tint(HermesTheme.accent).preferredColorScheme(.dark)
+            .tint(HermesTheme.accent)
     }
 }
 
@@ -178,7 +178,7 @@ struct ProjectDocumentDeletionReviewView: View {
                         .font(.subheadline).foregroundStyle(HermesTheme.muted)
                     if let changeMessage {
                         Label(changeMessage, systemImage: "exclamationmark.triangle")
-                            .font(.subheadline).foregroundStyle(.orange).accessibilityIdentifier("knowledge-deletion-changed")
+                            .font(.subheadline).foregroundStyle(HermesTheme.warning).accessibilityIdentifier("knowledge-deletion-changed")
                     }
                 }.listRowBackground(HermesTheme.surface)
                 Section("本次删除的资料") {
@@ -225,7 +225,7 @@ struct ProjectDocumentDeletionReviewView: View {
             .alert("删除失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("知道了", role: .cancel) { error = nil }
             } message: { Text(error ?? "") }
-        }.tint(HermesTheme.accent).preferredColorScheme(.dark)
+        }.tint(HermesTheme.accent)
     }
     private func delete() {
         do { try model.deleteReviewedProjectDocuments(review); onDeleted(); dismiss() }

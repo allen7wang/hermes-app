@@ -616,6 +616,11 @@ final class AppModel: ObservableObject {
         return conversation.id
     }
 
+    /// 服务端页面使用与本机聊天相同的网络配置创建客户端。
+    func makeRemoteClient() -> HermesClient {
+        HermesClient(settings: settings, sessionConfiguration: sessionConfiguration)
+    }
+
     func checkConnection() async {
         let current = settings
         guard current.isConfigured else {

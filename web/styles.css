@@ -1,0 +1,66 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f5f5f2;
+  --card: #fff;
+  --text: #1c1c1a;
+  --muted: #6d6d67;
+  --line: #e3e3de;
+  --accent: #0f6e56;
+  --accent-text: #fff;
+  --danger: #9f2d2d;
+  --user: #e7f4ef;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151514;
+    --card: #222220;
+    --text: #f3f3ef;
+    --muted: #a4a49c;
+    --line: #343430;
+    --accent: #3dbe9a;
+    --accent-text: #10231c;
+    --danger: #ffb4b4;
+    --user: #1c3330;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+#app { max-width: 760px; margin: 0 auto; padding: 16px; }
+header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+header h1 { font-size: 18px; margin: 0; font-weight: 650; }
+header .spacer { flex: 1; }
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+button { padding: 7px 12px; cursor: pointer; }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; }
+button:disabled { opacity: 0.45; cursor: default; }
+input, select, textarea { width: 100%; padding: 8px 10px; }
+textarea { min-height: 72px; resize: vertical; }
+label { display: block; margin: 10px 0; }
+label span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.list { display: flex; flex-direction: column; gap: 8px; }
+.session { text-align: left; width: 100%; }
+.session strong { display: block; }
+.session small { color: var(--muted); }
+.row { display: flex; gap: 8px; align-items: center; }
+.row > * { flex: 1; }
+.row > button { flex: 0 0 auto; }
+.messages { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.bubble { max-width: 92%; white-space: pre-wrap; word-break: break-word; }
+.bubble.user { margin-left: auto; background: var(--user); }
+.meta { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.error { color: var(--danger); white-space: pre-wrap; }
+.status { color: var(--muted); min-height: 1.2em; }
+.empty { color: var(--muted); padding: 24px 0; }
+.approval { border-color: var(--accent); }

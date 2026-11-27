@@ -144,7 +144,8 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             try:
                 while True:
-                    chunk = upstream.read(8192)
+                    # read1 returns what has arrived; read(n) would hold events until n bytes accumulate.
+                    chunk = upstream.read1(8192)
                     if not chunk:
                         break
                     self.wfile.write(chunk)

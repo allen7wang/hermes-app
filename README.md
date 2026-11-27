@@ -2,13 +2,13 @@
 
 用 iPhone 或 iPad 连接自己的 Hermes Agent，把持续的讨论、项目资料和待写内容放在一个原生 SwiftUI 工作区中。
 
-**当前源码 · v5.0.0（build 3）**
+**v5.0.0（build 3）· iOS 模拟器安装预览** · 提供 ARM64 模拟器包，不含真机签名 IPA。
 
-[用户指南](docs/USER-GUIDE.md) · [更新记录](CHANGELOG.md) · [v4.0.1 公开模拟器预览](https://github.com/allen7wang/hermes-app/releases/tag/v4.0.1) · [历史发布记录](docs/RELEASE-v4.0.1.md)
+[下载安装包](https://github.com/allen7wang/hermes-app/releases/tag/v5.0.0) · [用户指南](docs/USER-GUIDE.md) · [更新记录](CHANGELOG.md) · [v5.0.0 验证记录](docs/VALIDATION-v5.0.0.md) · [历史发布记录](docs/RELEASE-v4.0.1.md)
 
 ## 安装模拟器预览版
 
-从 Release 下载 `Hermes-4.0.1-iOS-Simulator-arm64.zip` 并解压。在移动端验收台选择「iOS 模拟器」，启动 / 连接后，通过「安装测试包」选择 `Hermes.app`。该包用于 Apple Silicon Mac 的 iOS 模拟器，不能安装到真实 iPhone。
+从 [v5.0.0 Release](https://github.com/allen7wang/hermes-app/releases/tag/v5.0.0) 下载 `Hermes-5.0.0-iOS-Simulator-arm64.zip` 并解压。在移动端验收台选择「iOS 模拟器」，启动 / 连接后，通过「安装测试包」选择 `Hermes.app`。该包用于 Apple Silicon Mac 的 iOS 模拟器，不能安装到真实 iPhone。
 
 Release 同时提供 `SHA256SUMS`、`BUILDINFO.json` 和 `INSTALL.txt`，可核对包摘要、源码提交、版本和构建环境。聊天功能需要在 App 中配置自己的 Hermes Agent 服务地址与密钥。
 
@@ -69,9 +69,9 @@ xcodebuild -project Hermes.xcodeproj -scheme Hermes \
 从干净的版本标签检出打包：
 
 ```sh
-git checkout v4.0.1
+git checkout v5.0.0
 python3 tools/package_simulator.py
-# 输出：build/release-v4.0.1/
+# 输出：build/release-v5.0.0/
 ```
 
 打包工具仅生成 ARM64 的 iPhoneSimulator Release 构建，并核对平台、版本、构建号和可执行文件架构。依赖版本以已提交的 `Package.resolved` 为准。

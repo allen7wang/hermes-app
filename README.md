@@ -1,93 +1,19 @@
-# Hermes iOS
+# Hermes Web
 
-用 iPhone 或 iPad 连接自己的 Hermes Agent，把持续的讨论、项目资料和待写内容放在一个原生 SwiftUI 工作区中。
+远端会话客户端。不包含 iOS 的本机工作台、项目、消息库和定时任务。
 
-**v4.0.1 · iOS 模拟器安装预览** · 提供 ARM64 模拟器包，不含真机签名 IPA。
-[下载安装包](https://github.com/allen7wang/hermes-ios/releases/tag/v4.0.1) · [用户指南](docs/USER-GUIDE.md) · [更新记录](CHANGELOG.md) · [本版发布记录](docs/RELEASE-v4.0.1.md) · [v1–v3 功能存档](docs/HISTORY-v1-v3.md)
+静态运行包发布在本仓库 `workbench-runtime` 分支根目录。从私有工作台打开时，服务必须是 HTTPS，并允许对应工作台来源（CORS）；局域网 HTTP 仍用本机代理。
 
-## 安装模拟器预览版
-
-从 Release 下载 `Hermes-4.0.1-iOS-Simulator-arm64.zip` 并解压。在移动端验收台选择「iOS 模拟器」，启动 / 连接后，通过「安装测试包」选择 `Hermes.app`。该包用于 Apple Silicon Mac 的 iOS 模拟器，不能安装到真实 iPhone。
-
-Release 同时提供 `SHA256SUMS`、`BUILDINFO.json` 和 `INSTALL.txt`，可核对包摘要、源码提交、版本和构建环境。聊天功能需要在 App 中配置自己的 Hermes Agent 服务地址与密钥。
-
-## 五个入口
-
-| 入口 | 可以做什么 |
-| --- | --- |
-| **工作台** | 继续本机文字草稿，查看最近对话与项目，统一检索；从“全部对话”进入原有筛选、批量整理和回收站。 |
-| **项目** | 组织相关对话、简介与共同指令；编写或导入知识资料，明确选择对话引用，批量添加、移除或替换引用。 |
-| **服务端** | 新建或续聊远端会话，处理工具审批；查看、创建和整理定时任务。 |
-| **消息库** | 跨本机对话查找、收藏和添加备注；多选导出、引用到草稿，或整理成项目资料。 |
-| **设置** | 管理多个连接、钥匙串密钥和模型；导出或合并导入 JSON 备份。 |
-
-## v4：找到内容，继续工作
-
-- **工作台成为首屏。** “继续草稿”展示最多 3 条入口，可进入“全部草稿”；同页保留最近对话、最近项目、新对话和“全部对话”入口。
-- **统一检索当前连接。** 一次查找项目名称与简介、资料标题与正文、对话标题与标签、消息正文与收藏备注，以及本机文字草稿。输入关键词后按类别查看结果，每类最多展示 50 条，并显示匹配总数；匹配使用完整文字，摘要只用于阅读。
-- **范围由用户决定。** 默认排除归档，明确打开“包含归档”后才加入；始终排除回收站、服务端内容、远端草稿及其他连接。空关键词不会列出全部数据，检索在设备上完成，不发送请求。
-- **从结果直达原处。** 项目、资料、对话和消息可打开对应详情；草稿可回到所属本机对话继续编辑。打开前重新检查连接和目标是否仍存在；归档草稿需恢复对话后才能发送。
-- **整理入口与计算。** 项目对话数量一次聚合，资料库批量操作集中到“整理资料”。检索使用后台任务、输入防抖与取消处理，最多保留每类 50 条展示结果。
-- **保护未保存输入。** 切换本机对话、创建新对话或更换连接前确认当前草稿保存成功；写入失败时保留输入与当前选择，并显示错误。
-- **沿用原有数据与功能。** 原工作台的筛选、标签、批量整理、回收站、上下文预览、消息复用和项目资料均保留，继续兼容 v1–v7 JSON 备份，无新增服务端接口或依赖。
-
-草稿没有独立的修改时间。“继续草稿”优先显示新对话草稿，其余按关联对话的更新时间排列，不表示最近编辑顺序。
-
-[工作台布局](preview/workspace-home-v4-demo.png) · [统一检索布局](preview/workspace-search-v4-demo.png) · [草稿列表布局](preview/workspace-drafts-v4-demo.png)
-
-以上为隔离数据的 XCTest 布局截图，未经原生点击验收。
-
-## 快速启动
-
-1. 用 Xcode 打开 `Hermes.xcodeproj`，选择 `Hermes` scheme 和 iOS 模拟器。真机运行时，在 Signing & Capabilities 中选择 Team，并按需修改 Bundle Identifier。
-2. 准备可从手机访问的 Hermes Agent API Server。在服务主机的 `~/.hermes/.env` 设置 `API_SERVER_ENABLED=true`、`API_SERVER_KEY=<your-secret>`，运行 `hermes gateway`。服务默认地址 `127.0.0.1:8642` 只指向服务主机自身，手机需使用可访问的 HTTPS 地址或可信局域网地址。
-3. 在“设置 → 添加连接”填写连接名称、服务地址、密钥和模型。地址可为服务根路径、以 `/v1` 结尾，或包含 Profile 路径，例如 `https://example.com/p/work/v1`。读取模型列表或测试连接，检查后保存。
-4. 从工作台开始新对话，或先创建项目并保存资料。发送前可打开“上下文预览”，检查实际携带的历史、系统指令、模型、图片与选定资料。
-
-具体操作、容量限制和整理流程见[用户指南](docs/USER-GUIDE.md)。
-
-## 本机内容与服务端内容
-
-本机对话、项目、知识资料、收藏和草稿按连接保存在当前设备；API 密钥分别存入系统钥匙串。发送时，服务端会收到请求正文、选定历史、指令和明确选择的资料；未选择的项目资料不会自动发送。
-
-“服务端”读取和修改服务器保存的会话与任务，与本机对话独立。服务端续聊由服务器管理上下文，支持文字和单张图片输入；历史图片展示以服务端返回内容为准。停止、审批、运行任务等操作会提交给服务器，断线后请先刷新状态，App 不自动重发消息。
-
-远程服务要求 HTTPS。局域网 HTTP 仅接受 `localhost`、`.local` 主机名和私有 IPv4 地址；请使用自己信任的服务地址，并保管 API 密钥。
-
-## 备份与迁移
-
-- 在“设置 → 备份与恢复”导出 JSON，或选择文件、检查预览后合并导入。备份覆盖本机对话、项目资料、引用、已发送图片、草稿、收藏和自建模板等内容，**不含 API 密钥，也不下载服务端记录**。
-- 继续读取 v1–v7，按内容导出最低所需格式；含知识资料或引用时使用 v7。已有对话与非空草稿优先保留，新导入连接需重新填写密钥。
-- JSON 用于恢复完整结构，Markdown 用于阅读与分享。备份文件含聊天和资料正文，需保存到信任的位置；备份不会持续同步设备。
-
-## 构建
-
-在仓库根目录运行：
+## 本机运行
 
 ```sh
-xcodebuild -project Hermes.xcodeproj -scheme Hermes \
-  -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-  CODE_SIGNING_ALLOWED=NO build
+python3 web/serve.py
 ```
 
-工程可通过 `ruby tools/generate_project.rb` 重新生成；首次构建需解析 MarkdownUI 与 Highlightr 依赖。
+浏览器打开 http://127.0.0.1:8787/ 。填写 Hermes API 地址和密钥。
 
-从干净的版本标签检出打包：
+## 检查
 
 ```sh
-git checkout v4.0.1
-python3 tools/package_simulator.py
-# 输出：build/release-v4.0.1/
+python3 web/protocol_test.py
 ```
-
-打包工具仅生成 ARM64 的 iPhoneSimulator Release 构建，并核对平台、版本、构建号和可执行文件架构。依赖版本以已提交的 `Package.resolved` 为准。
-
-## 验证与已知边界
-
-v4.0.1 的构建、回归和安装包验证范围见[本版发布记录](docs/RELEASE-v4.0.1.md)。
-
-v4.0.0 的历史验证：完整 **475 项 XCTest** 分别在 Mac Catalyst 与隔离 iPhone 16 Pro / iOS 18.1 通过，均为 0 失败、0 跳过，结果包无 runtimeWarnings；iOS Release 4.0.0 构建通过。完整范围见 [v4 验证记录](docs/VALIDATION-v4.0.0.md)，不作为 v4.0.1 全量回归结果。
-
-本版提供模拟器预览包，无真机签名 IPA。原生业务流程、真机触摸、真实 Hermes API 端到端及系统文件往返尚未完成验收；自动测试和模拟器启动不等同于这些验证。
-
-API 格式参考 [Hermes Agent 官方 API Server 文档](https://hermes-agent.nousresearch.com/docs/user-guide/features/api-server)。

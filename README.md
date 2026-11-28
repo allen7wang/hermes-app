@@ -6,6 +6,8 @@
 
 [下载安装包](https://github.com/allen7wang/hermes-app/releases/tag/v5.0.0) · [用户指南](docs/USER-GUIDE.md) · [更新记录](CHANGELOG.md) · [v5.0.0 验证记录](docs/VALIDATION-v5.0.0.md) · [历史发布记录](docs/RELEASE-v4.0.1.md)
 
+产品定位、竞品与商业化判断见[产品与商业化分析](product-strategy/README.md)。
+
 ## 安装模拟器预览版
 
 从 [v5.0.0 Release](https://github.com/allen7wang/hermes-app/releases/tag/v5.0.0) 下载 `Hermes-5.0.0-iOS-Simulator-arm64.zip` 并解压。在移动端验收台选择「iOS 模拟器」，启动 / 连接后，通过「安装测试包」选择 `Hermes.app`。该包用于 Apple Silicon Mac 的 iOS 模拟器，不能安装到真实 iPhone。
